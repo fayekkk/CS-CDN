@@ -1,0 +1,19 @@
+# Cloudflare Pages headers (one wildcard per rule)
+
+# latest files: short cache so updates show quickly
+/dist/daftra-cdn.js
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300
+
+/dist/daftra-cdn.min.js
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300
+
+/dist/daftra-cdn.min.js.map
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300
+
+# pinned versions (/dist/v1.1.2/...): never change, cache forever
+/dist/:version/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=31536000, immutable

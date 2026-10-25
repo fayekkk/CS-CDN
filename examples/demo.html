@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftra CDN — Demo</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; background: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    .muted { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .card h3 { margin: 0 0 10px; font-size: 15px; }
+    .form-control { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; }
+    button { margin: 3px; padding: 7px 12px; border: 0; border-radius: 6px; background: #1877f2; color: #fff; cursor: pointer; font: inherit; }
+    button.alt { background: #e2e8f0; color: #1e293b; }
+    .nav-tabs { list-style: none; padding: 0; margin: 0; display: flex; gap: 4px; border-bottom: 1px solid #cbd5e1; }
+    .nav-tabs li a { display: block; padding: 8px 12px; text-decoration: none; color: #334155; border-radius: 6px 6px 0 0; }
+    .nav-tabs li.active a { background: #1877f2; color: #fff; }
+    .tab-pane { display: none; padding: 12px 0; } .tab-pane.active { display: block; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 6px; font-size: 12px; overflow: auto; direction: ltr; text-align: left; max-height: 180px; }
+    label { font-size: 13px; display: block; margin: 8px 0 4px; }
+  </style>
+</head>
+<body>
+  <h1>Daftra CDN — Playground</h1>
+  <div class="muted">The API is mocked on this page, so every component runs offline. Switch language: <button class="alt" onclick="setLang('ar')">AR</button><button class="alt" onclick="setLang('en')">EN</button></div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Loader · Toast · Progress</h3>
+      <button onclick="DCDN.withLoader(DCDN.sleep(1200), {ar:'جاري التحميل...', en:'Loading...'})">Loader</button>
+      <button onclick="DCDN.toast(DCDN.t('تم الحفظ بنجاح','Saved successfully'))">Toast</button>
+      <button onclick="DCDN.toast(DCDN.t('حدث خطأ','Something failed'),'error',{title:'Error'})">Error toast</button>
+      <button onclick="runProgress()">Progress</button>
+    </div>
+
+    <div class="card">
+      <h3>Popup · Confirm</h3>
+      <button onclick="DCDN.showPopup('<p>أي محتوى HTML هنا</p><input class=form-control placeholder=Name>', {title:{ar:'نافذة',en:'Popup'}, buttons:[{text:'OK',class:'primary'}]})">Popup</button>
+      <button onclick="DCDN.confirm(DCDN.t('هل أنت متأكد؟','Are you sure?')).then(r=>DCDN.toast(JSON.stringify(r),'info'))">Confirm</button>
+    </div>
+
+    <div class="card">
+      <h3>bulkFetch · bulkPost (mock)</h3>
+      <button onclick="demoFetch()">bulkFetch 5 pages</button>
+      <button onclick="demoPost()">bulkPost 20 items</button>
+      <pre id="out">—</pre>
+    </div>
+
+    <div class="card">
+      <h3>addDropdown</h3>
+      <label>Single line field (saveAs: text)</label>
+      <input id="data-le_x--single_line_field" class="form-control" value="" />
+      <label>Dynamic dropdown (appends option)</label>
+      <select id="data-le_x--city" class="form-control"><option value="">-</option></select>
+      <pre id="ddout">—</pre>
+    </div>
+
+    <div class="card">
+      <h3>calculatePercent</h3>
+      <label>Total (base)</label>
+      <input id="total" class="form-control" value="1500" />
+      <label>Discount (type % on the left box)</label>
+      <input id="data-le_x--discountvalue" class="form-control" />
+    </div>
+
+    <div class="card">
+      <h3>appendtab_invoice</h3>
+      <ul class="nav nav-tabs responsive"><li class="active"><a href="#details" data-toggle="tab">Details</a></li></ul>
+      <div class="tab-content"><div class="tab-pane active" id="details">Native tab content</div></div>
+    </div>
+
+    <div class="card">
+      <h3>translate · numberToWords</h3>
+      <div id="tr"><b>العميل</b> · <span>الخدمات</span> · <input class="form-control" placeholder="بحث" style="width:120px"></div>
+      <button onclick="DCDN.translate([['العميل','Client'],['الخدمات','Services'],['بحث','Search']], {root:'#tr', lang:'en', observe:false})">Translate → EN</button>
+      <button onclick="DCDN.translate([['العميل','Client'],['الخدمات','Services'],['بحث','Search']], {root:'#tr', lang:'ar', observe:false})">→ AR</button>
+      <pre id="words"></pre>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- mock Daftra API ---------- */
+    const realFetch = window.fetch;
+    window.fetch = async (url, opts = {}) => {
+      const u = new URL(url, location.href);
+      await new Promise((r) => setTimeout(r, 150));
+      let body = { result: "successful", data: [] };
+      if (u.pathname.includes("/list/")) {
+        const p = +u.searchParams.get("page") || 1;
+        body = { data: Array.from({ length: 3 }, (_, i) => ({ id: p * 10 + i, name: "Item " + (p * 10 + i), city: "City " + (p * 10 + i) })), last_page: 5 };
+      } else if (u.pathname === "/api2/site_info") {
+        body = { data: { Site: { language_code: 7, currency_code: "SAR", country_code: "SA" } } };
+      } else if ((opts.method || "GET") !== "GET") {
+        body = { result: "successful", id: Math.floor(Math.random() * 1000) };
+      }
+      return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+  </script>
+  <script src="../dist/daftra-cdn.js"></script>
+  <script>
+    function setLang(l) {
+      DCDN.configure({ lang: l });
+      document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+      renderWords();
+    }
+    async function runProgress() {
+      const bar = DCDN.progressBar({ title: DCDN.t("جاري المعالجة", "Processing"), total: 10 }).data;
+      for (let i = 1; i <= 10; i++) { await DCDN.sleep(150); bar.update(i); }
+      bar.done(DCDN.t("تم", "Done"));
+    }
+    async function demoFetch() {
+      const res = await DCDN.bulkFetch("/v2/api/entity/product/list/1", { perPage: 3, progress: true });
+      document.getElementById("out").textContent = JSON.stringify({ success: res.success, meta: res.meta, rows: res.data.length, first: res.data.slice(0, 2) }, null, 1);
+    }
+    async function demoPost() {
+      const items = Array.from({ length: 20 }, (_, i) => ({ n: i }));
+      const res = await DCDN.bulkPost("/v2/api/entity/le_demo", items, { progress: true, concurrency: 3 });
+      document.getElementById("out").textContent = JSON.stringify({ success: res.success, saved: res.data.success.length, failed: res.data.failed.length });
+    }
+    function renderWords() {
+      document.getElementById("words").textContent =
+        JSON.stringify(DCDN.numberToWords(1250.5, { currency: "SAR" })) + "\n" + JSON.stringify(DCDN.numberToWords(1250.5, { currency: "SAR", lang: "en" }));
+    }
+
+    DCDN.onReady(async () => {
+      renderWords();
+      DCDN.addDropdown('[id$="--single_line_field"]', {
+        options: ["الرياض", "جدة", { value: "dmm", text: "الدمام" }], saveAs: "text",
+        onSelect: (o) => (document.getElementById("ddout").textContent = "input value = " + document.getElementById("data-le_x--single_line_field").value),
+      });
+      DCDN.addDropdown("#data-le_x--city", {
+        source: { url: "/v2/api/entity/le_cities/list/1", textKey: "city", perPage: 3 },
+        onSelect: (o) => {
+          const s = document.getElementById("data-le_x--city");
+          document.getElementById("ddout").textContent = "original select value = " + s.value + " (" + s.options.length + " options)";
+        },
+      });
+      DCDN.calculatePercent('[id$="--discountvalue"]', { base: "#total" });
+      DCDN.appendtab_invoice({
+        id: "services_log", title: { ar: "سجل الطلبات", en: "Services Log" }, badge: 3,
+        content: async () => { await DCDN.sleep(400); return "<p>Loaded lazily on first open ✔</p>"; },
+      });
+      const site = await DCDN.getSite();
+      DCDN.toast(JSON.stringify(site), "info");
+    });
+  </script>
+</body>
+</html>

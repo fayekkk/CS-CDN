@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftra CDN</title>
+  <style>
+    body { font-family: system-ui, Tahoma, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; color: #1e293b; line-height: 1.6; }
+    code, pre { background: #f1f5f9; border-radius: 6px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow: auto; }
+    a { color: #1877f2; }
+  </style>
+</head>
+<body>
+  <h1>Daftra CDN</h1>
+  <p>Reusable functions & components for Daftra page codes. Global: <code>window.DCDN</code></p>
+  <h3>Include</h3>
+  <pre>&lt;script src="<span id="u"></span>dist/daftra-cdn.js"&gt;&lt;/script&gt;</pre>
+  <ul>
+    <li><a href="dist/daftra-cdn.js">dist/daftra-cdn.js</a> (readable, use this — run DCDN.help() in the console)</li>
+    <li><a href="dist/daftra-cdn.min.js">dist/daftra-cdn.min.js</a> (optional minified)</li>
+    <li><a href="examples/demo.html">examples/demo.html</a> (playground)</li>
+    <li><a href="README.md">README.md</a> (full API)</li>
+  </ul>
+  <script>document.getElementById("u").textContent = location.origin + location.pathname.replace(/index\.html$/, "");</script>
+</body>
+</html>

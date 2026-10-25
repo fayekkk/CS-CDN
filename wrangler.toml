@@ -1,0 +1,6 @@
+# Cloudflare Pages config for Daftra CDN
+# Local test:  npx wrangler pages dev
+# Deploy:      npx wrangler pages deploy
+name = "daftra-cdn"
+pages_build_output_dir = "."
+compatibility_date = "2026-10-01"
