@@ -2,7 +2,7 @@
  * Daftra CDN v1.5.0 — reusable functions & components for Daftra page codes
  * Global: window.DCDN (alias window.DaftraCDN)
  * Docs in the console: DCDN.help()  or  DCDN.help("addDropdown")
- * Built: 2026-10-25T08:23:09.160Z
+ * Built: 2026-10-25T08:47:03.881Z
  */
 (function (factory) {
   // Resolve the real browser global, even when pasted in DevTools or loaded by a bundler
@@ -76,7 +76,29 @@ DCDN.config = {
 };
 
 DCDN.configure = function configure(newOptions) {
-  /* docs + examples: DCDN.help("configure")  or  DCDN.configure in the console */
+  /**
+   * Change the global configuration (merges with the current values).
+   *
+   * @param {Object} newOptions                    any key of DCDN.config:
+   * @param {string|null} [newOptions.apiKey]      API key (only outside Daftra)
+   * @param {string} [newOptions.baseUrl]          prepended to relative urls (only outside Daftra)
+   * @param {number} [newOptions.retries=3]        retries for network / 5xx / 429
+   * @param {number} [newOptions.retryDelay=600]   ms before the first retry (doubles each time)
+   * @param {number} [newOptions.perPage=100]      default page size for fetchAll
+   * @param {number} [newOptions.concurrency=4]    parallel requests for fetchAll / bulkPost
+   * @param {"ar"|"en"|null} [newOptions.lang]     force the language
+   * @param {string} [newOptions.siteInfoKey="site_info"]   localStorage key of the site info
+   * @param {boolean} [newOptions.autoResetSiteInfo=true]   clear site info when settings are saved
+   * @param {number} [newOptions.zIndex=1000000]   z-index of loader / popup / toast
+   * @param {string} [newOptions.primaryColor="#1877f2"]    progress bars / primary buttons
+   * @param {boolean} [newOptions.debug=false]     JSON logs of every request
+   * @returns {Object}                             the whole config after the change
+   *
+   * Examples:
+   *   DCDN.configure({ debug: true })               // log every request
+   *   DCDN.configure({ lang: "en" })                // force English UI texts
+   *   DCDN.configure({ retries: 5, perPage: 200 })
+   */
   if (newOptions) {
     for (var key in newOptions) {
       if (hasOwn(newOptions, key)) DCDN.config[key] = newOptions[key];
@@ -318,7 +340,17 @@ function readDocComment(fn, path) {
 }
 
 DCDN.help = function help(functionName) {
-  /* docs + examples: DCDN.help("help")  or  DCDN.help in the console */
+  /**
+   * Print documentation in the console as JSON (and return it).
+   *
+   * @param {string} [functionName]   e.g. "fetch", "storage.set" (empty = list every function)
+   * @returns {{functions:Array<{function:string, description:string}>}|{function:string, docs:string[]}}
+   *
+   * Examples:
+   *   DCDN.help()                  // { functions: [{ function, description }, ...] }
+   *   DCDN.help("bulkFetch")       // { function: "DCDN.bulkFetch", docs: [lines...] }
+   *   DCDN.help("storage.set")     // nested functions work too
+   */
   if (functionName) {
     var name = String(functionName).replace(/^DCDN\./, "");
     var fn = name.split(".").reduce(function (object, key) {
@@ -370,14 +402,32 @@ DCDN.help = function help(functionName) {
 /* ============================== timing =================================== */
 
 DCDN.sleep = function sleep(milliseconds) {
-  /* docs + examples: DCDN.help("sleep")  or  DCDN.sleep in the console */
+  /**
+   * Wait for some milliseconds (use with await).
+   *
+   * @param {number} milliseconds
+   * @returns {Promise<void>}
+   *
+   * Example:
+   *   await DCDN.sleep(500);
+   */
   return new Promise(function (resolve) {
     setTimeout(resolve, milliseconds);
   });
 };
 
 DCDN.debounce = function debounce(callback, waitMs) {
-  /* docs + examples: DCDN.help("debounce")  or  DCDN.debounce in the console */
+  /**
+   * Return a function that runs `callback` only after calls stop for `waitMs`.
+   * Good for search inputs / resize / input events.
+   *
+   * @param {Function} callback
+   * @param {number} [waitMs=250]
+   * @returns {Function}   the debounced function
+   *
+   * Example:
+   *   $("#search").on("input", DCDN.debounce(function () { search(this.value); }, 300));
+   */
   var timer;
   return function () {
     var context = this;
@@ -390,7 +440,16 @@ DCDN.debounce = function debounce(callback, waitMs) {
 };
 
 DCDN.throttle = function throttle(callback, waitMs) {
-  /* docs + examples: DCDN.help("throttle")  or  DCDN.throttle in the console */
+  /**
+   * Return a function that runs `callback` at most once every `waitMs`.
+   *
+   * @param {Function} callback
+   * @param {number} [waitMs=250]
+   * @returns {Function}   the throttled function
+   *
+   * Example:
+   *   window.addEventListener("scroll", DCDN.throttle(onScroll, 200));
+   */
   var lastRun = 0;
   return function () {
     var now = Date.now();
@@ -402,19 +461,44 @@ DCDN.throttle = function throttle(callback, waitMs) {
 };
 
 DCDN.chunk = function chunk(array, size) {
-  /* docs + examples: DCDN.help("chunk")  or  DCDN.chunk in the console */
+  /**
+   * Split an array into groups of `size`.
+   *
+   * @param {Array} array
+   * @param {number} size          items per group
+   * @returns {Array<Array>}
+   *
+   * Example:
+   *   DCDN.chunk([1, 2, 3, 4, 5], 2)   // [[1, 2], [3, 4], [5]]
+   */
   var groups = [];
   for (var i = 0; i < array.length; i += size) groups.push(array.slice(i, i + size));
   return groups;
 };
 
 DCDN.uid = function uid(prefix) {
-  /* docs + examples: DCDN.help("uid")  or  DCDN.uid in the console */
+  /**
+   * Random unique id string.
+   *
+   * @param {string} [prefix="dcdn"]
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.uid("tab")   // "tab_k3j9x2a"
+   */
   return (prefix || "dcdn") + "_" + Math.random().toString(36).slice(2, 9);
 };
 
 DCDN.escapeHtml = function escapeHtml(text) {
-  /* docs + examples: DCDN.help("escapeHtml")  or  DCDN.escapeHtml in the console */
+  /**
+   * Escape text before putting it inside HTML (prevents broken markup / XSS).
+   *
+   * @param {*} text
+   * @returns {string}
+   *
+   * Example:
+   *   $("#box").html("<b>" + DCDN.escapeHtml(client.name) + "</b>");
+   */
   return String(text == null ? "" : text)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -426,7 +510,15 @@ DCDN.escapeHtml = function escapeHtml(text) {
 /* ============================== numbers ================================== */
 
 DCDN.toEnDigits = function toEnDigits(text) {
-  /* docs + examples: DCDN.help("toEnDigits")  or  DCDN.toEnDigits in the console */
+  /**
+   * Convert Arabic-Indic (٠١٢) and Persian (۰۱۲) digits to 0-9.
+   *
+   * @param {*} text
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.toEnDigits("١٢٣٫٥")   // "123.5"
+   */
   return String(text == null ? "" : text)
     .replace(/[٠-٩]/g, function (digit) {
       return digit.charCodeAt(0) - 0x0660;
@@ -439,7 +531,20 @@ DCDN.toEnDigits = function toEnDigits(text) {
 };
 
 DCDN.parseNumber = function parseNumber(value) {
-  /* docs + examples: DCDN.help("parseNumber")  or  DCDN.parseNumber in the console */
+  /**
+   * Read a number from any displayed amount (removes commas, currency, Arabic digits).
+   * Replaces the many  parseFloat(x.replace(/,/g, ""))  /  removeCurr  snippets.
+   *
+   * @param {number|string} value      number or displayed text
+   * @returns {number}                  0 when no number is found
+   *
+   * Examples:
+   *   DCDN.parseNumber("1,250.50 ر.س")    // 1250.5
+   *   DCDN.parseNumber("SR 99")            // 99
+   *   DCDN.parseNumber("١٢٣")              // 123
+   *   DCDN.parseNumber("(50.00)")          // -50
+   *   DCDN.parseNumber("")                 // 0
+   */
   value = unwrapEnvelope(value);
   if (typeof value === "number") return isNaN(value) ? 0 : value;
   var text = DCDN.toEnDigits(value).replace(/,/g, "");
@@ -451,13 +556,38 @@ DCDN.parseNumber = function parseNumber(value) {
 };
 
 DCDN.round = function round(number, decimals) {
-  /* docs + examples: DCDN.help("round")  or  DCDN.round in the console */
+  /**
+   * Correct rounding (fixes 1.005 -> 1.01).
+   *
+   * @param {number|string} number
+   * @param {number} [decimals=2]
+   * @returns {number}
+   *
+   * Example:
+   *   DCDN.round(1.005, 2)   // 1.01
+   */
   var factor = Math.pow(10, decimals == null ? 2 : decimals);
   return Math.round((Number(number) + Number.EPSILON) * factor) / factor;
 };
 
 DCDN.formatNumber = function formatNumber(value, decimals, options) {
-  /* docs + examples: DCDN.help("formatNumber")  or  DCDN.formatNumber in the console */
+  /**
+   * Format a number with thousands separators.
+   *
+   * @param {number|string} value              number or text
+   * @param {number} [decimals]                 fixed decimals (omit = keep as is)
+   * @param {Object} [options]
+   * @param {string} [options.separator=","]    thousands separator
+   * @param {string} [options.decimalPoint="."] decimal mark
+   * @param {string} [options.prefix=""]        text before
+   * @param {string} [options.suffix=""]        text after
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.formatNumber(1250.5)                       // "1,250.5"
+   *   DCDN.formatNumber(1250.5, 2)                    // "1,250.50"
+   *   DCDN.formatNumber(1250.5, 2, { suffix: " ر.س" })  // "1,250.50 ر.س"
+   */
   options = options || {};
   var number = DCDN.parseNumber(value);
   var text = decimals == null ? String(number) : DCDN.round(number, decimals).toFixed(decimals);
@@ -467,7 +597,15 @@ DCDN.formatNumber = function formatNumber(value, decimals, options) {
 };
 
 DCDN.addThousandSeparator = function addThousandSeparator(value) {
-  /* docs + examples: DCDN.help("addThousandSeparator")  or  DCDN.addThousandSeparator in the console */
+  /**
+   * Old name kept for compatibility. Same as DCDN.formatNumber(value).
+   *
+   * @param {number|string} value
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.addThousandSeparator(1234567.5)   // "1,234,567.5"
+   */
   return DCDN.formatNumber(value);
 };
 
@@ -478,7 +616,18 @@ function padTwoDigits(number) {
 }
 
 DCDN.formatDate = function formatDate(date, format) {
-  /* docs + examples: DCDN.help("formatDate")  or  DCDN.formatDate in the console */
+  /**
+   * Format a date. Tokens: YYYY MM DD HH mm ss
+   *
+   * @param {Date|number|string} [date=now]
+   * @param {string} [format="YYYY-MM-DD"]      tokens: YYYY MM DD HH mm ss
+   * @returns {string}                          "" for an invalid date
+   *
+   * Examples:
+   *   DCDN.formatDate(new Date(), "YYYY-MM-DD")         // "2026-10-18"
+   *   DCDN.formatDate("2026-01-05", "DD/MM/YYYY")       // "05/01/2026"
+   *   DCDN.formatDate(Date.now(), "YYYY-MM-DD HH:mm:ss")
+   */
   var dateObject = date instanceof Date ? date : new Date(date || Date.now());
   if (isNaN(dateObject)) return "";
   var tokens = {
@@ -495,12 +644,32 @@ DCDN.formatDate = function formatDate(date, format) {
 };
 
 DCDN.today = function today(format) {
-  /* docs + examples: DCDN.help("today")  or  DCDN.today in the console */
+  /**
+   * Today's date as text.
+   *
+   * @param {string} [format="YYYY-MM-DD"]
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.today()                  // "2026-10-18"
+   *   DCDN.today("DD/MM/YYYY")      // "18/10/2026"
+   */
   return DCDN.formatDate(new Date(), format);
 };
 
 DCDN.addDays = function addDays(date, days, format) {
-  /* docs + examples: DCDN.help("addDays")  or  DCDN.addDays in the console */
+  /**
+   * Add (or subtract) days. Returns a Date, or text when `format` is given.
+   *
+   * @param {Date|number|string} [date=now]
+   * @param {number} days                       negative = subtract
+   * @param {string} [format]                   give it to get text instead of a Date
+   * @returns {Date|string}
+   *
+   * Examples:
+   *   DCDN.addDays(new Date(), 7)                   // Date object, next week
+   *   DCDN.addDays("2026-10-01", -1, "YYYY-MM-DD")  // "2026-09-30"
+   */
   var result = new Date(date || Date.now());
   result.setDate(result.getDate() + Number(days || 0));
   return format ? DCDN.formatDate(result, format) : result;
@@ -509,7 +678,16 @@ DCDN.addDays = function addDays(date, days, format) {
 /* ================================ URL ==================================== */
 
 DCDN.getUrlParam = function getUrlParam(name, url) {
-  /* docs + examples: DCDN.help("getUrlParam")  or  DCDN.getUrlParam in the console */
+  /**
+   * Read a query-string parameter.
+   *
+   * @param {string} name
+   * @param {string} [url=current page]
+   * @returns {string|null}
+   *
+   * Example (url ...?client_id=5):
+   *   DCDN.getUrlParam("client_id")   // "5"
+   */
   try {
     return new URL(url || location.href).searchParams.get(name);
   } catch (e) {
@@ -518,7 +696,18 @@ DCDN.getUrlParam = function getUrlParam(name, url) {
 };
 
 DCDN.getRecordId = function getRecordId(url) {
-  /* docs + examples: DCDN.help("getRecordId")  or  DCDN.getRecordId in the console */
+  /**
+   * The record id of the current view / show / edit page
+   * (= last number in the URL path).
+   *
+   * @param {string} [url=current page]
+   * @returns {number|null}
+   *
+   * Examples:
+   *   /owner/invoices/view/123                -> 123
+   *   /v2/owner/entity/le_projects/15/show    -> 15
+   *   DCDN.getRecordId()                      // current page
+   */
   var path = new URL(url || location.href, location.origin).pathname;
   var numbers = path.split("/").filter(function (segment) {
     return /^\d+$/.test(segment);
@@ -527,7 +716,16 @@ DCDN.getRecordId = function getRecordId(url) {
 };
 
 DCDN.getPageInfo = function getPageInfo(url) {
-  /* docs + examples: DCDN.help("getPageInfo")  or  DCDN.getPageInfo in the console */
+  /**
+   * Describe the current Daftra page from its URL.
+   *
+   * @param {string} [url=current page]
+   * @returns {{path:string, isV2:boolean, id:(number|null), entity?:string, workflow?:boolean, controller?:string, action:string}}
+   *
+   * Examples:
+   *   /v2/owner/entity/le_x/15/show  -> { isV2: true,  entity: "le_x", action: "show", id: 15 }
+   *   /owner/invoices/view/123       -> { isV2: false, controller: "invoices", action: "view", id: 123 }
+   */
   var parsed = new URL(url || location.href, location.origin);
   var segments = parsed.pathname.split("/").filter(Boolean);
   var info = { path: parsed.pathname, isV2: segments[0] === "v2", id: DCDN.getRecordId(parsed.href) };
@@ -553,13 +751,38 @@ DCDN.getPageInfo = function getPageInfo(url) {
 /* ================================ DOM ==================================== */
 
 DCDN.onReady = function onReady(callback) {
-  /* docs + examples: DCDN.help("onReady")  or  DCDN.onReady in the console */
+  /**
+   * Run `callback` when the DOM is ready (runs immediately if already ready).
+   *
+   * @param {Function} callback
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.onReady(function () { DCDN.toast("ready"); });
+   */
   if (document.readyState !== "loading") callback();
   else document.addEventListener("DOMContentLoaded", callback);
 };
 
 DCDN.waitForElement = function waitForElement(selector, options) {
-  /* docs + examples: DCDN.help("waitForElement")  or  DCDN.waitForElement in the console */
+  /**
+   * Wait until an element exists in the page, then resolve with it.
+   * Uses MutationObserver (no setInterval loops).
+   *
+   * @param {string} selector
+   * @param {Object} [options]
+   * @param {number} [options.timeout=15000]       ms (0 = forever)
+   * @param {Element|Document} [options.root=document]
+   * @returns {Promise<Element>}                   rejects on timeout
+   *
+   * Examples:
+   *   const res = await DCDN.waitForElement("#InvoiceForm");
+   *   res.success      // false on timeout
+   *   res.data         // "<form#InvoiceForm>"  (JSON text)
+   *   res.element      // the real element
+   *
+   *   DCDN.waitForElement(".invoice-actions", { timeout: 5000 }).then(res => { if (res.success) $(res.element).append(btn); });
+   */
   options = options || {};
   var root = options.root || document;
   var timeout = options.timeout == null ? 15000 : options.timeout;
@@ -589,7 +812,21 @@ DCDN.waitForElement = function waitForElement(selector, options) {
 };
 
 DCDN.waitFor = function waitFor(condition, options) {
-  /* docs + examples: DCDN.help("waitFor")  or  DCDN.waitFor in the console */
+  /**
+   * Check `condition()` every `interval` ms until it returns something truthy.
+   * Replaces the  setInterval(() => { if (...) clearInterval(...) })  pattern.
+   *
+   * @param {function():*} condition               resolves with its first truthy value
+   * @param {Object} [options]
+   * @param {number} [options.interval=100]        ms between checks
+   * @param {number} [options.timeout=15000]       ms (0 = forever)
+   * @returns {Promise<*>}
+   *
+   * Examples:
+   *   await DCDN.waitFor(() => $("body").hasClass("custom_app"));
+   *   const res = await DCDN.waitFor(() => $("#city")[0].selectize);
+   *   res.data   // the selectize instance
+   */
   options = options || {};
   var interval = options.interval || 100;
   var timeout = options.timeout == null ? 15000 : options.timeout;
@@ -611,7 +848,21 @@ DCDN.waitFor = function waitFor(condition, options) {
 };
 
 DCDN.onElement = function onElement(selector, callback, options) {
-  /* docs + examples: DCDN.help("onElement")  or  DCDN.onElement in the console */
+  /**
+   * Run `callback(element)` once for every element matching `selector`,
+   * now AND for elements added later (e.g. new subform rows).
+   *
+   * @param {string} selector
+   * @param {function(Element):void} callback      runs once per element
+   * @param {Object} [options]
+   * @param {Element} [options.root=document]      where to watch
+   * @returns {{stop:Function}}
+   *
+   * Example:
+   *   DCDN.onElement('[id$="--qty"]', function (input) {
+   *     input.style.background = "#fffbe6";
+   *   });
+   */
   options = options || {};
   var markKey = "dcdnSeen" + DCDN.uid("").slice(1);
 
@@ -640,7 +891,19 @@ DCDN.onElement = function onElement(selector, callback, options) {
 var loadedScripts = {};
 
 DCDN.loadScript = function loadScript(src, options) {
-  /* docs + examples: DCDN.help("loadScript")  or  DCDN.loadScript in the console */
+  /**
+   * Load an external script once (cached). Returns a Promise.
+   *
+   * @param {string} src
+   * @param {Object} [options]
+   * @param {string} [options.id]                  id of the <script>
+   * @param {function():boolean} [options.test]    return true to skip loading (already on the page)
+   * @returns {Promise<void>}
+   *
+   * Example:
+   *   await DCDN.loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+   *                         { test: () => window.XLSX });
+   */
   options = options || {};
   if (loadedScripts[src]) return loadedScripts[src];
   loadedScripts[src] = new Promise(function (resolve, reject) {
@@ -662,7 +925,15 @@ DCDN.loadScript = function loadScript(src, options) {
 };
 
 DCDN.loadStyle = function loadStyle(href) {
-  /* docs + examples: DCDN.help("loadStyle")  or  DCDN.loadStyle in the console */
+  /**
+   * Load an external stylesheet once.
+   *
+   * @param {string} href
+   * @returns {Promise<void>}
+   *
+   * Example:
+   *   DCDN.loadStyle("https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css");
+   */
   if (document.querySelector('link[href="' + href + '"]')) return Promise.resolve();
   return new Promise(function (resolve, reject) {
     var link = document.createElement("link");
@@ -677,7 +948,16 @@ DCDN.loadStyle = function loadStyle(href) {
 };
 
 DCDN.injectCSS = function injectCSS(cssText, id) {
-  /* docs + examples: DCDN.help("injectCSS")  or  DCDN.injectCSS in the console */
+  /**
+   * Add a <style> tag. With an id it is added only once.
+   *
+   * @param {string} cssText
+   * @param {string} [id]          added once per id
+   * @returns {HTMLStyleElement}
+   *
+   * Example:
+   *   DCDN.injectCSS(".invoice-actions .btn { border-radius: 8px }", "my-app-css");
+   */
   if (id && document.getElementById(id)) return document.getElementById(id);
   var style = document.createElement("style");
   if (id) style.id = id;
@@ -687,7 +967,15 @@ DCDN.injectCSS = function injectCSS(cssText, id) {
 };
 
 DCDN.copyToClipboard = function copyToClipboard(text) {
-  /* docs + examples: DCDN.help("copyToClipboard")  or  DCDN.copyToClipboard in the console */
+  /**
+   * Copy text to the clipboard. Returns a Promise.
+   *
+   * @param {string} text
+   * @returns {Promise<void>}
+   *
+   * Example:
+   *   DCDN.copyToClipboard(invoiceLink).then(() => DCDN.toast("Copied"));
+   */
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
   var textarea = document.createElement("textarea");
   textarea.value = text;
@@ -703,7 +991,17 @@ DCDN.copyToClipboard = function copyToClipboard(text) {
 };
 
 DCDN.triggerEnter = function triggerEnter(target) {
-  /* docs + examples: DCDN.help("triggerEnter")  or  DCDN.triggerEnter in the console */
+  /**
+   * Simulate pressing Enter on an input
+   * (used to trigger Daftra's barcode / serial number lookups).
+   *
+   * @param {string|Element} target   input selector / element
+   * @returns {void}
+   *
+   * Example:
+   *   $(".item-serial input").val("SN-001");
+   *   DCDN.triggerEnter(".item-serial input");
+   */
   var element = getElement(target);
   if (!element) return;
   ["keydown", "keypress", "keyup"].forEach(function (type) {
@@ -718,25 +1016,58 @@ DCDN.triggerEnter = function triggerEnter(target) {
 /* ========================= Daftra page context =========================== */
 
 DCDN.getUser = function getUser() {
-  /* docs + examples: DCDN.help("getUser")  or  DCDN.getUser in the console */
+  /**
+   * The logged-in user object Daftra puts on the page (window.USER).
+   *
+   * @returns {{staff_id?:(number|string), branch_id?:(number|string), is_owner?:(number|boolean), role_id?:(number|string)}}  window.USER
+   *
+   * Example:
+   *   DCDN.getUser().data.staff_id     // 0 = owner
+   *   DCDN.getUser().data.branch_id
+   */
   return window.USER || {};
 };
 
 DCDN.isOwner = function isOwner() {
-  /* docs + examples: DCDN.help("isOwner")  or  DCDN.isOwner in the console */
+  /**
+   * true when the logged-in user is the account owner.
+   *
+   * @returns {boolean}
+   *
+   * Example:
+   *   if (!DCDN.isOwner().data) $(".delete-btn").hide();
+   */
   var user = DCDN.getUser();
   return !!(Number(user.is_owner) || Number(user.staff_id) === 0);
 };
 
 DCDN.getCsrfToken = function getCsrfToken() {
-  /* docs + examples: DCDN.help("getCsrfToken")  or  DCDN.getCsrfToken in the console */
+  /**
+   * CSRF token of the page (sent automatically by DCDN.post / put / del).
+   *
+   * @returns {string}   "" when the page has none
+   *
+   * Example:
+   *   $.ajaxSetup({ headers: { "X-CSRF-Token": DCDN.getCsrfToken() } });
+   */
   var meta = document.querySelector('meta[name="csrf-token"]');
   var input = document.querySelector('input[name="_csrfToken"]') || document.querySelector('input[name="data[_Token][key]"]');
   return (meta && meta.getAttribute("content")) || (input && input.value) || "";
 };
 
 DCDN.field = function field(key, root) {
-  /* docs + examples: DCDN.help("field")  or  DCDN.field in the console */
+  /**
+   * Find a v2 form field by its key.
+   * Looks for  [id$="--key"]  then  [name$="[key]"]  then  #key.
+   *
+   * @param {string} key                 field key, e.g. "qty"
+   * @param {Element|Document} [root=document]
+   * @returns {Element|null}
+   *
+   * Examples:
+   *   DCDN.field("discountvalue")            // <input id="data-le_x--discountvalue">
+   *   DCDN.field("qty", rowElement)          // inside one subform row
+   */
   root = root || document;
   return (
     root.querySelector('[id$="--' + key + '"]') ||
@@ -746,12 +1077,31 @@ DCDN.field = function field(key, root) {
 };
 
 DCDN.fields = function fields(key, root) {
-  /* docs + examples: DCDN.help("fields")  or  DCDN.fields in the console */
+  /**
+   * All fields with this key (e.g. the same field in every subform row).
+   *
+   * @param {string} key
+   * @param {Element|Document} [root=document]
+   * @returns {Element[]}
+   *
+   * Example:
+   *   DCDN.fields("qty").elements.forEach(input => console.log(input.value));
+   *   DCDN.fields("qty").data   // ["<input#data-le_x--qty>", ...]
+   */
   return getElements('[id$="--' + key + '"]', root);
 };
 
 DCDN.getFieldValue = function getFieldValue(target) {
-  /* docs + examples: DCDN.help("getFieldValue")  or  DCDN.getFieldValue in the console */
+  /**
+   * Read a field value. Works with selectize, select2, checkbox and normal inputs.
+   *
+   * @param {string|Element} target     field key, selector or element
+   * @returns {string|string[]|boolean|null}   selectize value / checkbox state / input value
+   *
+   * Examples:
+   *   DCDN.getFieldValue("qty")              // by field key
+   *   DCDN.getFieldValue("#ClientCity")      // by selector
+   */
   var element = typeof target === "string" ? getElement(target) || DCDN.field(target) : getElement(target);
   if (!element) return null;
   if (element.selectize) return element.selectize.getValue();
@@ -760,7 +1110,19 @@ DCDN.getFieldValue = function getFieldValue(target) {
 };
 
 DCDN.setFieldValue = function setFieldValue(target, value, text) {
-  /* docs + examples: DCDN.help("setFieldValue")  or  DCDN.setFieldValue in the console */
+  /**
+   * Set a field value AND fire change, so Daftra recalculates.
+   * Works with selectize, select2, plain selects (adds the option if missing) and inputs.
+   *
+   * @param {string|Element} target     field key, selector or element
+   * @param {*} value
+   * @param {string} [text]             option text when a select needs a new option
+   * @returns {boolean}                 false when the field was not found
+   *
+   * Examples:
+   *   DCDN.setFieldValue("qty", 5);
+   *   DCDN.setFieldValue("#data-le_custom_data_client--city", 9, "Riyadh");
+   */
   var element = typeof target === "string" ? getElement(target) || DCDN.field(target) : getElement(target);
   if (!element) return false;
 
@@ -789,7 +1151,26 @@ DCDN.setFieldValue = function setFieldValue(target, value, text) {
 };
 
 DCDN.addMenuItem = function addMenuItem(options) {
-  /* docs + examples: DCDN.help("addMenuItem")  or  DCDN.addMenuItem in the console */
+  /**
+   * Add a link inside a sidebar sub-menu (was addNewItemInSubMenu).
+   * The new item is a clone of the first item, so it keeps Daftra's style.
+   *
+   * @param {Object} options
+   * @param {string} [options.parent]                 parent menu selector, e.g. ".mn_inventory"
+   * @param {number|string} [options.sidebarId]       data-app-sidebar-list-item id (fallback)
+   * @param {string} options.url                      link
+   * @param {string|{ar:string,en:string}} options.title
+   * @param {number} [options.after=last]             insert after this item index
+   * @returns {Element|null}                          the new <li>
+   *
+   * Example:
+   *   DCDN.addMenuItem({
+   *     parent: ".mn_inventory", sidebarId: 36,
+   *     url: "/v2/owner/entity/le_service_packages/list",
+   *     title: { ar: "إدارة الباقات", en: "Manage Packages" },
+   *     after: 0,
+   *   });
+   */
   var parent =
     getElement(options.parent) ||
     (options.sidebarId != null && document.querySelector('li[data-app-sidebar-list-item="' + options.sidebarId + '"]'));
@@ -828,7 +1209,21 @@ DCDN.addMenuItem = function addMenuItem(options) {
  * ======================================================================== */
 
 DCDN.buildQuery = function buildQuery(params) {
-  /* docs + examples: DCDN.help("buildQuery")  or  DCDN.buildQuery in the console */
+  /**
+   * Turn a nested object into Daftra's bracket query string.
+   * null values become a key without value (needed for is_null filters).
+   *
+   * @param {Object} params        nested object (null value = key without value)
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.buildQuery({ filter: { client_id: 5 } })
+   *     // "filter[client_id]=5"
+   *   DCDN.buildQuery({ filter: { name: { like: "abc" }, branch_id: { in: [1, 2] } } })
+   *     // "filter[name][like]=abc&filter[branch_id][in][]=1&filter[branch_id][in][]=2"
+   *   DCDN.buildQuery({ filter: { follow_up_status: { is_null: null } } })
+   *     // "filter[follow_up_status][is_null]"
+   */
   var parts = [];
 
   function encodeKey(key) {
@@ -863,7 +1258,23 @@ function isApi2Url(url) {
 }
 
 DCDN.buildUrl = function buildUrl(url, options) {
-  /* docs + examples: DCDN.help("buildUrl")  or  DCDN.buildUrl in the console */
+  /**
+   * Build the final request url from url + options.
+   * Used by every request function — you rarely need it directly.
+   *
+   * @param {string} url
+   * @param {Object} [options]
+   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
+   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
+   * @param {Object} [options.params]         extra raw query parameters
+   * @param {number} [options.page]           page number
+   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.buildUrl("/v2/api/entity/invoice/list/1", { filters: { client_id: 5 }, perPage: 50 })
+   *   // "/v2/api/entity/invoice/list/1?filter[client_id]=5&per_page=50"
+   */
   options = options || {};
   var query = {};
   if (options.params) {
@@ -890,7 +1301,34 @@ function createDaftraError(message, status, data) {
 }
 
 DCDN.request = function request(url, options) {
-  /* docs + examples: DCDN.help("request")  or  DCDN.request in the console */
+  /**
+   * The core request used by fetch / post / put / del. Retries automatically.
+   *
+   * @param {string} url
+   * @param {Object} [options]
+   * @param {"GET"|"POST"|"PUT"|"PATCH"|"DELETE"} [options.method="GET"]
+   * @param {Object|FormData|string} [options.body]
+   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
+   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
+   * @param {Object} [options.params]         extra raw query parameters
+   * @param {number} [options.page]           page number
+   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
+   * @param {Object} [options.headers]          extra headers
+   * @param {number} [options.retries]          override DCDN.config.retries
+   * @param {boolean} [options.raw=false]       true = the browser Response
+   * @param {AbortSignal} [options.signal]
+   * @returns {Promise<Object|Response>}        the raw Daftra JSON (rejects with DaftraError {message, status, data})
+   *
+   * - JSON body is stringified and Content-Type is set for you.
+   * - X-CSRF-Token is added to POST / PUT / PATCH / DELETE.
+   * - Retries network errors, 5xx and 429 (DCDN.config.retries times, delay doubles).
+   * - Throws a DaftraError when HTTP fails OR the response has result: "failed".
+   *
+   * Example:
+   *   DCDN.request("/v2/api/entity/le_x/5", { method: "PATCH", body: { status: 1 } })
+   *     .then(res => console.log(res))
+   *     .catch(err => console.log(err.status, err.data));
+   */
   options = options || {};
   var method = (options.method || "GET").toUpperCase();
   var maxRetries = options.retries == null ? DCDN.config.retries : options.retries;
@@ -1074,7 +1512,71 @@ function runWithExtras(work, options, defaultLoaderText) {
  */
 
 DCDN.fetch = function fetchOne(url, options) {
-  /* docs + examples: DCDN.help("fetch")  or  DCDN.fetch in the console */
+  /**
+   * GET one endpoint and return the RESULT directly (no res.data digging):
+   *   list url    -> array of rows       (rows.meta = { total, pages, page, response })
+   *   record url  -> the record object
+   *   full: true  -> the raw response
+   * Add  all: true  to get EVERY page (same as DCDN.fetchAll).
+   *
+   * @param {string} url
+   * @param {Object} [options]
+   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
+   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
+   * @param {Object} [options.params]         extra raw query parameters
+   * @param {number} [options.page]           page number
+   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
+   * @param {boolean} [options.all=false]       true = every page (same as fetchAll)
+   * @param {boolean} [options.full=false]      true = the raw Daftra response
+   * @param {string|boolean} [options.unwrap=true]   api2 model name ("Invoice"), true = auto, false = keep
+   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
+   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
+   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
+   * @param {function(*):void} [options.onSuccess]      callback with the plain result
+   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
+   * @param {function():void} [options.onComplete]      always runs at the end
+   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
+   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
+   * @param {Object} [options.headers]          extra headers
+   * @param {number} [options.retries]          override DCDN.config.retries
+   * @param {AbortSignal} [options.signal]
+   * @returns {Promise<Array|Object>}           list -> rows (+ meta {total, pages, page}), record -> object
+   *
+   * Examples:
+   *   // await style -> { success, data, meta }
+   *   const res = await DCDN.fetch("/v2/api/entity/client/list/1", { filters: { category: "VIP" } });
+   *   if (res.success) {
+   *     res.data.length       // rows of page 1
+   *     res.meta.total        // total rows on the server
+   *   } else {
+   *     res.error.message     // res.error.status
+   *   }
+   *
+   *   const all = await DCDN.fetch("/v2/api/entity/client/list/1", { all: true, loader: true });
+   *   all.data                // every row
+   *
+   *   const inv = await DCDN.fetch("/v2/api/entity/invoice/" + DCDN.raw.getRecordId() + "/1");
+   *   inv.data.no
+   *
+   *   const invoices = await DCDN.fetch("/api2/invoices", { unwrap: "Invoice", perPage: 20 });
+   *   invoices.data[0].id     // instead of res.data[0].Invoice.id
+   *
+   *   const site = await DCDN.fetch("/api2/site_info");   // site.data.currency_code (Site auto-unwrapped)
+   *
+   *   // callback style (no await)
+   *   DCDN.fetch("/v2/api/entity/staff/list/1", {
+   *     loader: "جاري التحميل...",
+   *     errorMessage: true,
+   *     onSuccess: function (staff) { console.log(staff); },
+   *   });
+   *
+   *   // on error: { success: false, error, data: [] }
+   *   const res = await DCDN.fetch(url, { silent: true, fallback: [] });
+   *
+   *   // raw Daftra response inside data
+   *   const raw = await DCDN.fetch("/api2/invoices", { full: true });
+   *   raw.data.pagination.total_results
+   */
   options = options || {};
   if (options.all) return DCDN.bulkFetch(url, options);
   return runWithExtras(
@@ -1104,22 +1606,94 @@ function sendWithMethod(method, url, body, options) {
 }
 
 DCDN.post = function post(url, body, options) {
-  /* docs + examples: DCDN.help("post")  or  DCDN.post in the console */
+  /**
+   * POST a JSON body and return the RESULT directly
+   * (the created record, or what the server returns).
+   *
+   * @param {string} url
+   * @param {Object|FormData} body
+   * @param {Object} [options]
+   * @param {string} [options.method="POST"]    override the method
+   * @param {boolean} [options.full=false]               true = raw Daftra response
+   * @param {string|boolean} [options.unwrap=true]      api2 model name to unwrap ("Invoice"), true = auto, false = keep
+   * @param {Object} [options.headers]                  extra request headers
+   * @param {number} [options.retries]                  override DCDN.config.retries
+   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
+   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
+   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
+   * @param {function(*):void} [options.onSuccess]      callback with the plain result
+   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
+   * @param {function():void} [options.onComplete]      always runs at the end
+   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
+   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
+   * @returns {Promise<Object>}                 the saved record / server result
+   *
+   * Examples:
+   *   const res = await DCDN.post("/v2/api/entity/le_invoice-items",
+   *     { invoice_id: 15, item_status: "Not Assigned" },
+   *     { loader: true, successMessage: "تم الحفظ", errorMessage: true });
+   *   res.success   // true / false
+   *   res.data.id   // created record id
+   *
+   *   // update fields of a v2 record
+   *   await DCDN.post("/v2/api/entity/invoice/15/fields", { follow_up_status: 3 });
+   *
+   *   // callback style
+   *   DCDN.post(url, body, {
+   *     onSuccess: function (record) { location.reload(); },
+   *     onError:   function (err) { DCDN.toast(err.message, "error"); },
+   *   });
+   *
+   *   // api2 create invoice -> unwrap the Invoice object
+   *   const res = await DCDN.post("/api2/invoices", { Invoice: {...}, InvoiceItem: [...] }, { unwrap: "Invoice" });
+   *   res.data.id
+   */
   return sendWithMethod((options && options.method) || "POST", url, body, options);
 };
 
 DCDN.put = function put(url, body, options) {
-  /* docs + examples: DCDN.help("put")  or  DCDN.put in the console */
+  /**
+   * PUT a JSON body (full update). Returns the result. Same options as DCDN.post.
+   *
+   * @param {string} url
+   * @param {Object} body
+   * @param {Object} [options]                  same as DCDN.post
+   * @returns {Promise<Object>}
+   *
+   * Example:
+   *   await DCDN.put("/v2/api/entity/app_367_package/3", { name: "Gold" }, { successMessage: "تم التعديل" });
+   */
   return sendWithMethod("PUT", url, body, options);
 };
 
 DCDN.patch = function patch(url, body, options) {
-  /* docs + examples: DCDN.help("patch")  or  DCDN.patch in the console */
+  /**
+   * PATCH a JSON body (partial update). Returns the result. Same options as DCDN.post.
+   *
+   * @param {string} url
+   * @param {Object} body
+   * @param {Object} [options]                  same as DCDN.post
+   * @returns {Promise<Object>}
+   *
+   * Example:
+   *   await DCDN.patch("/v2/api/entity/le_x/3", { status: 1 });
+   */
   return sendWithMethod("PATCH", url, body, options);
 };
 
 DCDN.del = function del(url, options) {
-  /* docs + examples: DCDN.help("del")  or  DCDN.del in the console */
+  /**
+   * DELETE a record. Returns the result. Same options as DCDN.post.
+   *
+   * @param {string} url
+   * @param {Object} [options]                  same as DCDN.post
+   * @returns {Promise<Object>}
+   *
+   * Example:
+   *   if ((await DCDN.confirm("Delete?", { danger: true })).data) {
+   *     await DCDN.del("/v2/api/entity/le_x/3", { successMessage: "تم الحذف", errorMessage: true });
+   *   }
+   */
   return sendWithMethod("DELETE", url, undefined, options);
 };
 DCDN["delete"] = DCDN.del;
@@ -1150,7 +1724,61 @@ function getRows(response) {
 }
 
 DCDN.bulkFetch = function bulkFetch(url, options) {
-  /* docs + examples: DCDN.help("bulkFetch")  or  DCDN.bulkFetch in the console */
+  /**
+   * Fetch MANY things in one call and return the RESULTS directly. Three ways:
+   *
+   * @param {string|string[]} url                list url, url template with {id}, or a list of urls
+   * @param {Object} [options]
+   * @param {Object} [options.filters]          same as DCDN.fetch
+   * @param {Object} [options.sort]
+   * @param {Object} [options.params]
+   * @param {number} [options.perPage=100]
+   * @param {Array<number|string>} [options.ids]   ids for the {id} template
+   * @param {number} [options.maxPages]         stop after N pages
+   * @param {number} [options.concurrency=4]    parallel requests
+   * @param {string|boolean} [options.unwrap=true]   api2 model name, true = auto, false = keep
+   * @param {boolean|string|{ar:string,en:string}} [options.progress]   progress bar (true or a title)
+   * @param {function(number, number):void} [options.onProgress]        (done, total)
+   * @param {boolean} [options.stopOnError=false]   ids / urls modes: stop at the first failure
+   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
+   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
+   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
+   * @param {function(*):void} [options.onSuccess]      callback with the plain result
+   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
+   * @param {function():void} [options.onComplete]      always runs at the end
+   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
+   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
+   * @returns {Promise<Array>}                  rows (+ meta {total, pages, page, fetchedPages}) / one result per url
+   *
+   * 1) ALL pages of a list (pages are requested in parallel, then merged):
+   *      const res = await DCDN.fetchAll("/v2/api/entity/product/list/1", {
+   *        filters: { "category.name": "extras" },
+   *        perPage: 100,
+   *        progress: true,              // shows a progress bar
+   *      });
+   *      res.data.length                // every row of every page
+   *      res.meta.total                 // total reported by the server
+   *
+   *    api2 rows are wrapped by model name -> `unwrap`:
+   *      const res = await DCDN.fetchAll("/api2/invoices", { unwrap: "Invoice" });
+   *      // res.data = [{ id, no, ... }]  instead of [{ Invoice: {...}, InvoiceItem: [...] }]
+   *
+   * 2) Many records by id (url template with {id}) -> array of records:
+   *      const res = await DCDN.fetchAll("/v2/api/entity/invoice/{id}/1", { ids: [10, 11, 12] });
+   *      res.data   // [record, record, record]
+   *
+   * 3) A list of urls -> array of results (same order):
+   *      const res = await DCDN.fetchAll(["/api2/site_info", "/v2/api/entity/staff/list/1"]);
+   *      const [site, staff] = res.data;
+   *      site.currency_code;   staff.length
+   *
+   * Callback style:
+   *   DCDN.fetchAll("/v2/api/entity/client/list/1", {
+   *     progress: "تحميل العملاء",
+   *     onSuccess: function (clients) { DCDN.toast(clients.length + " clients"); },   // callbacks get the plain data
+   *     errorMessage: true,
+   *   });
+   */
   options = options || {};
   var concurrency = options.concurrency || DCDN.config.concurrency;
 
@@ -1247,7 +1875,42 @@ DCDN.bulkFetch = function bulkFetch(url, options) {
 DCDN.fetchAll = DCDN.bulkFetch;
 
 DCDN.bulkPost = function bulkPost(url, items, options) {
-  /* docs + examples: DCDN.help("bulkPost")  or  DCDN.bulkPost in the console */
+  /**
+   * Send MANY records (POST by default) with limited parallel requests.
+   * One failure does not stop the others (unless stopOnError: true).
+   *
+   * @param {string|function(*, number):string} url   one url, or (item, index) => url
+   * @param {Array} items                       bodies (or anything + transform)
+   * @param {Object} [options]
+   * @param {"POST"|"PUT"|"PATCH"|"DELETE"} [options.method="POST"]
+   * @param {number} [options.concurrency=3]
+   * @param {number} [options.delay=0]          ms after each request
+   * @param {function(*, number):Object} [options.transform]   (item, index) => body
+   * @param {boolean} [options.stopOnError=false]
+   * @param {boolean|string|{ar:string,en:string}} [options.progress]
+   * @param {function(number, number, Object):void} [options.onProgress]   (done, total, result)
+   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
+   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
+   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
+   * @param {function(*):void} [options.onSuccess]      callback with the plain result
+   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
+   * @param {function():void} [options.onComplete]      always runs at the end
+   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
+   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
+   * @returns {Promise<{results:Array<{item:*, ok:boolean, data?:*, error?:Error}>, success:Array, failed:Array}>}
+   *
+   * Examples:
+   *   const res = await DCDN.bulkPost("/v2/api/entity/le_invoice-items", items, { progress: true });
+   *   res.data.success.length   // saved
+   *   res.data.failed.length    // failed
+   *
+   *   // update many invoice items, one url per item
+   *   await DCDN.bulkPost(
+   *     row => "/v2/api/entity/invoice_item/" + row.id + "/fields",
+   *     rows,
+   *     { transform: row => ({ status: 1 }), concurrency: 2, delay: 100 }
+   *   );
+   */
   options = options || {};
   items = items || [];
   return runWithExtras(function () {
@@ -1307,14 +1970,45 @@ function sendMany(url, items, options) {
 }
 
 DCDN.uploadFile = function uploadFile(entity, fieldKey, file, filename) {
-  /* docs + examples: DCDN.help("uploadFile")  or  DCDN.uploadFile in the console */
+  /**
+   * Upload a file / image to a v2 entity file field.
+   * Returns the upload response (use its id when saving the record).
+   *
+   * @param {string} entity              e.g. "le_client_m"
+   * @param {string} fieldKey            e.g. "le_client_m.file"
+   * @param {Blob|File} file
+   * @param {string} [filename]
+   * @returns {Promise<Object>}          upload result (use its id when saving)
+   *
+   * Example:
+   *   const input = document.querySelector("#photo");
+   *   const res = await DCDN.uploadFile("le_client_m", "le_client_m.file", input.files[0]);
+   *   res.data.id
+   */
   var formData = new FormData();
   formData.append("file", file, filename || file.name || "file-" + Date.now());
   return DCDN.request("/v2/api/entity/upload_file/" + entity + "/" + fieldKey, { method: "POST", body: formData });
 };
 
 DCDN.entity = function entity(entityKey) {
-  /* docs + examples: DCDN.help("entity")  or  DCDN.entity in the console */
+  /**
+   * Shortcut object for one v2 entity (custom forms, invoices, products...).
+   *
+   * @param {string} entityKey
+   * @returns {{get:function((number|string), number=):Promise<Object>, list:function(Object=):Promise<Array>, all:function(Object=):Promise<Array>,
+   *            create:function(Object):Promise<Object>, update:function((number|string), Object):Promise<Object>,
+   *            updateFields:function((number|string), Object):Promise<Object>, remove:function((number|string)):Promise<Object>}}
+   *
+   * Example:
+   *   const Items = DCDN.entity("le_invoice-items").data;   // methods return { success, data } too
+   *   await Items.get(5);                               // GET    /v2/api/entity/le_invoice-items/5/1
+   *   await Items.list({ filters: { invoice_id: 9 } }); // first page
+   *   await Items.all({ filters: { invoice_id: 9 } });  // ALL pages (bulkFetch)
+   *   await Items.create({ invoice_id: 9 });            // POST   /v2/api/entity/le_invoice-items
+   *   await Items.update(5, { status: 1 });             // PUT    /v2/api/entity/le_invoice-items/5
+   *   await Items.updateFields(5, { status: 1 });       // POST   /v2/api/entity/le_invoice-items/5/fields
+   *   await Items.remove(5);                            // DELETE /v2/api/entity/le_invoice-items/5
+   */
   var base = "/v2/api/entity/" + entityKey;
   return {
     get: function (id, depth) {
@@ -1380,12 +2074,37 @@ function storageDelete(key) {
 DCDN.storage = {};
 
 DCDN.storage.key = function key(appId, name) {
-  /* docs + examples: DCDN.help("storage.key")  or  DCDN.storage.key in the console */
+  /**
+   * The real localStorage key used for an app value: "app_{appId}_{name}"
+   * (same format already used by old apps, e.g. "app_397_workflow").
+   *
+   * @param {number|string} appId
+   * @param {string} name
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.storage.key(397, "workflow")   // "app_397_workflow"
+   */
   return "app_" + appId + "_" + name;
 };
 
 DCDN.storage.set = function set(appId, name, value, options) {
-  /* docs + examples: DCDN.help("storage.set")  or  DCDN.storage.set in the console */
+  /**
+   * Save a value for one app.
+   * Strings are saved as-is, other values as JSON.
+   *
+   * @param {number|string} appId
+   * @param {string} name
+   * @param {*} value                     anything JSON-able
+   * @param {Object} [options]
+   * @param {number} [options.ttl]        seconds until it expires
+   * @returns {boolean}                   false when localStorage is blocked
+   *
+   * Examples:
+   *   DCDN.storage.set(397, "workflow", "12");                 // key: app_397_workflow
+   *   DCDN.storage.set(397, "settings", { auto: true });
+   *   DCDN.storage.set(397, "cache", rows, { ttl: 600 });      // expires after 10 minutes
+   */
   options = options || {};
   var storedValue;
   if (options.ttl) {
@@ -1397,7 +2116,19 @@ DCDN.storage.set = function set(appId, name, value, options) {
 };
 
 DCDN.storage.get = function get(appId, name, defaultValue) {
-  /* docs + examples: DCDN.help("storage.get")  or  DCDN.storage.get in the console */
+  /**
+   * Read a value saved with DCDN.storage.set (JSON is parsed for you).
+   * Returns defaultValue (or null) when missing or expired.
+   *
+   * @param {number|string} appId
+   * @param {string} name
+   * @param {*} [defaultValue=null]       returned when missing / expired
+   * @returns {*}
+   *
+   * Examples:
+   *   DCDN.storage.get(397, "workflow")              // "12"
+   *   DCDN.storage.get(397, "settings", {})          // { auto: true }  or {}
+   */
   var fallback = defaultValue === undefined ? null : defaultValue;
   var raw = storageRead(DCDN.storage.key(appId, name));
   if (raw == null) return fallback;
@@ -1421,17 +2152,43 @@ DCDN.storage.get = function get(appId, name, defaultValue) {
 };
 
 DCDN.storage.has = function has(appId, name) {
-  /* docs + examples: DCDN.help("storage.has")  or  DCDN.storage.has in the console */
+  /**
+   * true when a (non expired) value exists.
+   *
+   * @param {number|string} appId
+   * @param {string} name
+   * @returns {boolean}
+   *
+   * Example:
+   *   if (!DCDN.storage.has(82, "settings").data) loadSettings();
+   */
   return DCDN.storage.get(appId, name) !== null;
 };
 
 DCDN.storage.remove = function remove(appId, name) {
-  /* docs + examples: DCDN.help("storage.remove")  or  DCDN.storage.remove in the console */
+  /**
+   * Delete one value.
+   *
+   * @param {number|string} appId
+   * @param {string} name
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.storage.remove(397, "workflow");
+   */
   storageDelete(DCDN.storage.key(appId, name));
 };
 
 DCDN.storage.clear = function clear(appId) {
-  /* docs + examples: DCDN.help("storage.clear")  or  DCDN.storage.clear in the console */
+  /**
+   * Delete every value of one app (all keys starting with "app_{appId}_").
+   *
+   * @param {number|string} appId
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.storage.clear(397);
+   */
   var prefix = "app_" + appId + "_";
   try {
     Object.keys(localStorage).forEach(function (storageKey) {
@@ -1461,7 +2218,28 @@ function readCachedSiteInfo() {
 }
 
 DCDN.getSiteInfo = function getSiteInfo(options) {
-  /* docs + examples: DCDN.help("getSiteInfo")  or  DCDN.getSiteInfo in the console */
+  /**
+   * Site info shared by ALL apps on the account.
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.force=false]   ignore the cache
+   * @returns {Promise<{Site:Object}>}
+   *
+   * How it works:
+   *   1. If localStorage["site_info"] already exists (set by ANY app) -> return it, no request.
+   *   2. Otherwise GET /api2/site_info and save `response.data`
+   *      ONLY if the key is still empty (another app may have saved it meanwhile —
+   *      we never overwrite it).
+   *   Parallel calls share one request.
+   *
+   * Saved shape (same as the old apps):  { Site: { language_code, currency_code, country_code, ... } }
+   *
+   * Examples:
+   *   const res = await DCDN.getSiteInfo();
+   *   res.data.Site.currency_code      // "SAR"
+   *
+   *   DCDN.getSiteInfo().then(res => res.data.Site.language_code);   // 7 = ar, 41 = en
+   */
   options = options || {};
   if (!options.force) {
     var cached = readCachedSiteInfo();
@@ -1484,24 +2262,67 @@ DCDN.getSiteInfo = function getSiteInfo(options) {
 };
 
 DCDN.getSite = function getSite(options) {
-  /* docs + examples: DCDN.help("getSite")  or  DCDN.getSite in the console */
+  /**
+   * Shortcut for (await DCDN.getSiteInfo()).Site
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.force=false]
+   * @returns {Promise<{language_code:number, currency_code:string, country_code:string}>}   info.Site
+   *
+   * Example:
+   *   const res = await DCDN.getSite();
+   *   res.data.currency_code   // "SAR"
+   *   res.data.country_code    // "SA"
+   */
   return DCDN.getSiteInfo(options).then(function (info) {
     return (info && info.Site) || info || {};
   });
 };
 
 DCDN.getSiteInfoSync = function getSiteInfoSync() {
-  /* docs + examples: DCDN.help("getSiteInfoSync")  or  DCDN.getSiteInfoSync in the console */
+  /**
+   * Cached site info WITHOUT a request (null if no app cached it yet).
+   *
+   * @returns {{Site:Object}|null}
+   *
+   * Example:
+   *   const res = DCDN.getSiteInfoSync();
+   *   if (res.data) res.data.Site.currency_code;
+   */
   return readCachedSiteInfo();
 };
 
 DCDN.clearSiteInfo = function clearSiteInfo() {
-  /* docs + examples: DCDN.help("clearSiteInfo")  or  DCDN.clearSiteInfo in the console */
+  /**
+   * Remove the cached site info (next getSiteInfo() fetches again).
+   * Done automatically when the settings form is saved.
+   *
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.clearSiteInfo();
+   */
   storageDelete(DCDN.config.siteInfoKey);
 };
 
 DCDN.getAppSettings = function getAppSettings(entityKey, options) {
-  /* docs + examples: DCDN.help("getAppSettings")  or  DCDN.getAppSettings in the console */
+  /**
+   * Read an app's settings record once and cache it in localStorage
+   * (like the old setAppInfo / getAppGeneralSettings).
+   *
+   * @param {string} entityKey               settings entity
+   * @param {Object} [options]
+   * @param {number|string} [options.appId=entityKey]   storage id -> "app_{appId}_settings"
+   * @param {number} [options.id=1]          record id
+   * @param {number} [options.depth=1]
+   * @param {number} [options.ttl]           cache seconds
+   * @param {boolean} [options.force=false]
+   * @returns {Promise<Object>}
+   *
+   * Example:
+   *   const res = await DCDN.getAppSettings("le_pos_general_Settings", { appId: 82, ttl: 3600 });
+   *   if (res.success && res.data.activate_beauty_app == "2") { ... }
+   */
   options = options || {};
   var appId = options.appId || entityKey;
   var recordId = options.id || 1;
@@ -1523,7 +2344,24 @@ DCDN.getAppSettings = function getAppSettings(entityKey, options) {
 var LANGUAGE_CODES = { 7: "ar", 41: "en" }; // Daftra Site.language_code
 
 DCDN.detectLang = function detectLang() {
-  /* docs + examples: DCDN.help("detectLang")  or  DCDN.detectLang in the console */
+  /**
+   * Detect the page language. Returns "ar" or "en".
+   *
+   * @returns {"ar"|"en"}
+   *
+   * Checks in this order:
+   *   1. DCDN.config.lang (forced)
+   *   2. <body class="en_app"> / "ar_app"  (set by the old apps)
+   *   3. dir attribute on <html> / <body>
+   *   4. computed CSS direction of <body>
+   *   5. <html lang="...">
+   *   6. cached site_info language_code (7 = ar, 41 = en)
+   *   7. "ar"
+   *
+   * Examples:
+   *   DCDN.detectLang()                               // { success: true, data: "ar" }
+   *   if (DCDN.detectLang().data === "en") { ... }
+   */
   if (DCDN.config.lang) return DCDN.config.lang;
 
   var body = document.body;
@@ -1551,17 +2389,41 @@ DCDN.detectLang = function detectLang() {
 };
 
 DCDN.isRTL = function isRTL() {
-  /* docs + examples: DCDN.help("isRTL")  or  DCDN.isRTL in the console */
+  /**
+   * true on Arabic (right-to-left) pages.
+   *
+   * @returns {boolean}
+   *
+   * Example:
+   *   $box.css("text-align", DCDN.isRTL().data ? "right" : "left");
+   */
   return DCDN.detectLang() === "ar";
 };
 
 DCDN.isEn = function isEn() {
-  /* docs + examples: DCDN.help("isEn")  or  DCDN.isEn in the console */
+  /**
+   * true on English pages.
+   *
+   * @returns {boolean}
+   *
+   * Example:
+   *   const label = DCDN.isEn().data ? "Save" : "حفظ";
+   */
   return DCDN.detectLang() === "en";
 };
 
 DCDN.t = function t(arabicText, englishText) {
-  /* docs + examples: DCDN.help("t")  or  DCDN.t in the console */
+  /**
+   * Pick the text for the page language.
+   *
+   * @param {string|{ar:string,en:string}|string[]} arabicText   Arabic text, or one { ar, en } / [ar, en]
+   * @param {string} [englishText]
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.t("حفظ", "Save").data            // "حفظ" on Arabic pages, "Save" on English pages
+   *   DCDN.t({ ar: "حفظ", en: "Save" }).data  // same, object form
+   */
   if (englishText === undefined) return pickText(arabicText);
   return DCDN.detectLang() === "en" ? englishText : arabicText;
 };
@@ -1596,7 +2458,52 @@ var translatorWritten = typeof WeakMap === "function" ? new WeakMap() : null;
 var activeTranslators = []; // translate() observers, so a new one on the same root can replace them
 
 DCDN.translate = function translate(words, options) {
-  /* docs + examples: DCDN.help("translate")  or  DCDN.translate in the console */
+  /**
+   * Replace words on the page from a list of { ar, en } pairs, and KEEP replacing (observer). Two modes:
+   *   mode "translate" (default): detect the page language and put every matched word in it
+   *       Arabic page  -> "settings" becomes "الاعدادات"   (Arabic words stay)
+   *       English page -> "الإعدادات" becomes "settings"   (English words stay)
+   *       Calling it twice is safe: the second call finds nothing left to change.
+   *   mode "swap": ignore the language, every Arabic word becomes English and every English word Arabic.
+   *       Calling it twice swaps everything back.
+   * Covers text nodes (labels, buttons, menus, table cells, dropdown options), the attributes below,
+   * and button values. A MutationObserver translates anything Daftra or your code adds later
+   * (modals, AJAX lists, subform rows, dropdown panels). Form VALUES typed by users are never changed.
+   * Every text on the page is checked; a text that CONTAINS a word gets that part replaced.
+   * Arabic matching is tolerant: "الاعدادات" also matches "الإعدادات" / "الإعـدادات" / tashkeel, ى = ي, ة = ه,
+   * and any spaces / &nbsp; / new lines between words match.
+   *
+   * @param {Array<{ar:string, en:string}|string[]>|{ar:string, en:string}} words
+   *        [{ ar: "الإعدادات", en: "Settings" }, ...]  ([ar, en] arrays and one single object work too)
+   * @param {Object} [options]
+   * @param {string|Element} [options.root=document.body]   where to translate / watch
+   * @param {boolean} [options.observe=true]                keep translating new / changed content
+   * @param {boolean} [options.ignoreCase=true]             "settings", "Settings" and "SETTINGS" all match
+   * @param {boolean} [options.wholeWords=false]            only whole words ("Test" never changes "Testing")
+   * @param {boolean} [options.exact=false]                 only when a whole text equals the word
+   * @param {string[]} [options.attributes]                 default placeholder, title, aria-label, data-original-title, data-float-label
+   * @param {string} [options.skipSelector]                 never touched (default: script, style, noscript, textarea, code, pre, .dcdn-no-translate)
+   * @param {"translate"|"swap"} [options.mode="translate"]  see above
+   * @param {"ar"|"en"} [options.lang]                      mode "translate" only: force the target language (default page language)
+   * @param {number} [options.debounce=80]                  ms to wait for DOM changes to settle before re-translating
+   * @returns {{mode:string, replacements:number, words:number, lang:string, hint:(string|undefined), translate:function((string|Element)=):number, addWords:function(Array):number, stop:function():void}}
+   *          replacements = how many texts changed in the first pass; translate() runs again; stop() ends the observer
+   *
+   * Examples:
+   *   DCDN.translate([
+   *     { ar: "الإعدادات", en: "Settings" },
+   *     { ar: "العميل", en: "Client" },
+   *     { ar: "حفظ", en: "Save" },
+   *   ]);
+   *
+   *   // one form only, whole words, stop watching later
+   *   const tr = DCDN.translate([{ ar: "الخدمات", en: "Services" }], { root: "#myForm", wholeWords: true }).data;
+   *   tr.addWords([{ ar: "العمولة", en: "Commission" }]);
+   *   tr.stop();
+   *
+   *   // swap both ways whatever the page language (call again to swap back)
+   *   DCDN.translate([{ ar: "الاعدادات", en: "settings" }], { mode: "swap" });
+   */
   options = options || {};
   words = unwrapEnvelope(words);
   if (words && !Array.isArray(words)) words = [words];
@@ -1817,7 +2724,17 @@ DCDN.translate = function translate(words, options) {
 };
 
 DCDN.translateText = function translateText(text, words, lang) {
-  /* docs + examples: DCDN.help("translateText")  or  DCDN.translateText in the console */
+  /**
+   * Translate ONE string with the same word list format (no DOM).
+   *
+   * @param {string} text
+   * @param {Array<string[]|{ar:string,en:string}>} words
+   * @param {"ar"|"en"} [lang=page language]     target language
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.translateText("سجل الطلبات", [["سجل الطلبات", "Services Log"]])   // "Services Log" on English pages
+   */
   lang = lang || DCDN.detectLang();
   var result = String(text == null ? "" : text);
   (words || []).forEach(function (word) {
@@ -1831,7 +2748,16 @@ DCDN.translateText = function translateText(text, words, lang) {
 };
 
 DCDN.applyBodyClasses = function applyBodyClasses() {
-  /* docs + examples: DCDN.help("applyBodyClasses")  or  DCDN.applyBodyClasses in the console */
+  /**
+   * Add the body classes the old apps use:
+   *   "custom_app ar_app|en_app {country_code} {currency_code}"
+   * Also done automatically with  <script ... data-body-classes="true">.
+   *
+   * @returns {Promise<Object>}   info.Site
+   *
+   * Example:
+   *   DCDN.applyBodyClasses().then(res => res.data.currency_code);
+   */
   return DCDN.getSite().then(function (site) {
     if (!document.body) return;
     var lang = LANGUAGE_CODES[site.language_code] || (DCDN.isRTL() ? "ar" : "en");
@@ -1976,7 +2902,19 @@ DCDN.ensureStyles = ensureStyles;
 var openLoaderCount = 0; // nested showLoader() calls
 
 DCDN.showLoader = function showLoader(text) {
-  /* docs + examples: DCDN.help("showLoader")  or  DCDN.showLoader in the console */
+  /**
+   * Show a full-screen loader (spinner + optional text).
+   * Safe for nested calls: every showLoader() needs one hideLoader().
+   *
+   * @param {string|{ar:string,en:string}} [text]
+   * @returns {HTMLElement}   the loader
+   *
+   * Examples:
+   *   DCDN.showLoader();
+   *   DCDN.showLoader({ ar: "جاري الحفظ...", en: "Saving..." });
+   *   ...
+   *   DCDN.hideLoader();
+   */
   ensureStyles();
   openLoaderCount++;
 
@@ -1995,7 +2933,16 @@ DCDN.showLoader = function showLoader(text) {
 };
 
 DCDN.hideLoader = function hideLoader(force) {
-  /* docs + examples: DCDN.help("hideLoader")  or  DCDN.hideLoader in the console */
+  /**
+   * Hide the loader. It really hides when every showLoader() got its hideLoader().
+   *
+   * @param {boolean} [force=false]   hide now, ignoring nested showLoader calls
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.hideLoader();
+   *   DCDN.hideLoader(true);
+   */
   openLoaderCount = force ? 0 : Math.max(0, openLoaderCount - 1);
   if (openLoaderCount > 0) return;
   var loader = document.getElementById("dcdn-loader");
@@ -2003,12 +2950,38 @@ DCDN.hideLoader = function hideLoader(force) {
 };
 
 DCDN.toggleLoadingSpinner = function toggleLoadingSpinner(show, text) {
-  /* docs + examples: DCDN.help("toggleLoadingSpinner")  or  DCDN.toggleLoadingSpinner in the console */
+  /**
+   * Old name kept for compatibility with existing page codes.
+   *
+   * @param {boolean} show
+   * @param {string|{ar:string,en:string}} [text]
+   * @returns {HTMLElement|void}
+   *
+   * Examples:
+   *   DCDN.toggleLoadingSpinner(true);
+   *   DCDN.toggleLoadingSpinner(false);
+   */
   return show ? DCDN.showLoader(text) : DCDN.hideLoader(true);
 };
 
 DCDN.withLoader = function withLoader(work, text) {
-  /* docs + examples: DCDN.help("withLoader")  or  DCDN.withLoader in the console */
+  /**
+   * Show the loader while a promise / async function runs, then hide it
+   * (even when it fails). Returns the work result.
+   *
+   * @param {Promise|Function} work                     a Promise or an (async) function
+   * @param {string|{ar:string,en:string}} [text]
+   * @returns {Promise<*>}                               what the work returned
+   *
+   * Examples:
+   *   const res = await DCDN.withLoader(DCDN.post(url, body), "جاري الحفظ...");
+   *   res.data   // what the work returned (here: the post JSON)
+   *
+   *   await DCDN.withLoader(async () => {
+   *     await step1();
+   *     await step2();
+   *   }, { ar: "جاري المعالجة", en: "Processing" });
+   */
   DCDN.showLoader(text);
   return Promise.resolve()
     .then(function () {
@@ -2024,7 +2997,24 @@ DCDN.withLoader = function withLoader(work, text) {
 var TOAST_ICONS = { success: "✓", error: "✕", warning: "!", info: "i" };
 
 DCDN.toast = function toast(message, type, options) {
-  /* docs + examples: DCDN.help("toast")  or  DCDN.toast in the console */
+  /**
+   * Show a small notification that disappears by itself.
+   *
+   * @param {string|{ar:string,en:string}} message
+   * @param {"success"|"error"|"warning"|"info"} [type="success"]
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}} [options.title]
+   * @param {number} [options.timeout]            ms (default 3500, errors 6000, 0 = stay)
+   * @param {"top-right"|"top-left"|"top-center"|"bottom-right"|"bottom-left"|"bottom-center"} [options.position]
+   * @param {boolean} [options.html=false]        message is HTML (trusted content only)
+   * @returns {{el:HTMLElement, close:Function}}
+   *
+   * Examples:
+   *   DCDN.toast("تم الحفظ");
+   *   DCDN.toast({ ar: "تم", en: "Done" }, "info");
+   *   DCDN.toast("حدث خطأ", "error", { title: "خطأ", timeout: 0 });
+   *   DCDN.toast.success("Saved");    DCDN.toast.error("Failed");
+   */
   ensureStyles();
   if (type && typeof type === "object") {
     // allow DCDN.toast(message, { type: "error", ... })
@@ -2092,7 +3082,28 @@ DCDN.toast = function toast(message, type, options) {
 /* ============================= progress bar ============================== */
 
 DCDN.progressBar = function progressBar(options) {
-  /* docs + examples: DCDN.help("progressBar")  or  DCDN.progressBar in the console */
+  /**
+   * Show a progress bar (floating at the bottom, or inside a container).
+   *
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}} [options.title]
+   * @param {number} [options.total=0]            number of steps
+   * @param {string|Element} [options.target]     render inside (default floating)
+   * @param {number|boolean} [options.autoClose=1500]   ms after done() (false = keep)
+   * @returns {{el:HTMLElement, update:function(number, number=):Object, increment:function(number=):Object,
+   *            setText:Function, setTitle:Function, done:function(*=, number=):Object, error:Function, remove:Function}}
+   *
+   * Examples:
+   *   const bar = DCDN.progressBar({ title: "ترحيل البنود", total: items.length }).data;
+   *   for (const item of items) {
+   *     await DCDN.post(url, item);
+   *     bar.increment();
+   *   }
+   *   bar.done("تم");
+   *
+   *   // inside a popup / div
+   *   const bar2 = DCDN.progressBar({ title: "Import", total: 100, target: "#import-box" }).data;
+   */
   ensureStyles();
   options = options || {};
   var total = options.total || 0;
@@ -2170,7 +3181,41 @@ DCDN.progressBar = function progressBar(options) {
 var openPopups = []; // stack, the last one is on top
 
 DCDN.showPopup = function showPopup(content, options) {
-  /* docs + examples: DCDN.help("showPopup")  or  DCDN.showPopup in the console */
+  /**
+   * Open a modal popup with any HTML content.
+   *
+   * @param {string|Element|{ar:string,en:string}} content    HTML, element, jQuery or { ar, en }
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}|boolean} [options.title]   false = no header
+   * @param {number|string} [options.width="560px"]
+   * @param {Array<{text:(string|{ar:string,en:string}), class?:string, onClick?:function(Object, HTMLElement):void}>} [options.buttons]
+   * @param {function(Object):void} [options.onOpen]
+   * @param {function(*, Object):void} [options.onClose]
+   * @param {boolean} [options.closeOnBackdrop=true]
+   * @param {boolean} [options.closeOnEsc=true]
+   * @param {string} [options.id]                 fixed id (same id replaces)
+   * @param {string} [options.className]
+   * @param {"rtl"|"ltr"} [options.dir]
+   * @returns {{id:string, el:HTMLElement, box:HTMLElement, body:HTMLElement, setContent:Function, close:function(*=):void}}
+   *
+   * Examples:
+   *   DCDN.showPopup("<p>مرحبا</p>", { title: "رسالة" });
+   *
+   *   const popup = DCDN.showPopup('<input id="note" class="form-control">', {   // popup.data.close()
+   *     title: { ar: "إضافة ملاحظة", en: "Add note" },
+   *     width: 500,
+   *     buttons: [
+   *       { text: "إلغاء" },
+   *       { text: "حفظ", class: "primary", onClick: function (p) {
+   *           const note = p.body.querySelector("#note").value;
+   *           DCDN.post("/v2/api/entity/le_notes", { note }).then(() => p.close());
+   *       } },
+   *     ],
+   *   });
+   *
+   *   // show JSON
+   *   DCDN.showPopup("<pre>" + DCDN.escapeHtml(JSON.stringify(res, null, 2)) + "</pre>", { title: "Response", width: 800 });
+   */
   ensureStyles();
   options = options || {};
   var popupId = options.id || DCDN.uid("popup");
@@ -2270,7 +3315,16 @@ DCDN.showPopup = function showPopup(content, options) {
 };
 
 DCDN.closePopup = function closePopup(popupId) {
-  /* docs + examples: DCDN.help("closePopup")  or  DCDN.closePopup in the console */
+  /**
+   * Close the top popup, or the popup with this id.
+   *
+   * @param {string} [popupId]    none = the top popup
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.closePopup();
+   *   DCDN.closePopup("my-popup");
+   */
   var popup = popupId
     ? openPopups.filter(function (item) {
         return item.id === popupId;
@@ -2280,7 +3334,26 @@ DCDN.closePopup = function closePopup(popupId) {
 };
 
 DCDN.confirm = function confirm(message, options) {
-  /* docs + examples: DCDN.help("confirm")  or  DCDN.confirm in the console */
+  /**
+   * Yes / no popup. Resolves true (OK) or false (Cancel / closed).
+   *
+   * @param {string|{ar:string,en:string}} message
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}} [options.title]
+   * @param {string|{ar:string,en:string}} [options.okText]
+   * @param {string|{ar:string,en:string}} [options.cancelText]
+   * @param {boolean} [options.danger=false]      red OK button
+   * @param {number} [options.width=420]
+   * @returns {Promise<boolean>}                  true = OK
+   *
+   * Examples:
+   *   const answer = await DCDN.confirm("هل تريد الحذف؟", { danger: true });
+   *   if (answer.data) {      // true = OK, false = Cancel
+   *     await DCDN.del(url);
+   *   }
+   *
+   *   DCDN.confirm({ ar: "متأكد؟", en: "Sure?" }).then(res => { if (res.data) save(); });
+   */
   options = options || {};
   return new Promise(function (resolve) {
     var answered = false;
@@ -2317,7 +3390,20 @@ DCDN.confirm = function confirm(message, options) {
 };
 
 DCDN.alert = function alertPopup(message, options) {
-  /* docs + examples: DCDN.help("alert")  or  DCDN.alert in the console */
+  /**
+   * Message popup with one OK button. Resolves when closed.
+   * (Nicer replacement for window.alert, does not block the page.)
+   *
+   * @param {string|{ar:string,en:string}} message
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}} [options.title]
+   * @param {string|{ar:string,en:string}} [options.okText]
+   * @param {number} [options.width=420]
+   * @returns {Promise<void>}
+   *
+   * Example:
+   *   await DCDN.alert("تم إنشاء 5 مدفوعات");
+   */
   options = options || {};
   return new Promise(function (resolve) {
     DCDN.showPopup('<div style="font-size:15px;line-height:1.7"></div>', {
@@ -2356,7 +3442,24 @@ DCDN.alert = function alertPopup(message, options) {
 var TAB_PAGES = {}; // name -> { layout, match, nav, content }
 
 DCDN.registerTabPage = function registerTabPage(pageName, pageConfig) {
-  /* docs + examples: DCDN.help("registerTabPage")  or  DCDN.registerTabPage in the console */
+  /**
+   * Register a page name and create  DCDN.appendtab_<pageName>(options).
+   * The name after "appendtab_" is free — use any page you need.
+   *
+   * @param {string} pageName                       -> DCDN.appendtab_<pageName>
+   * @param {Object} [pageConfig]
+   * @param {"auto"|"classic"|"v2"} [pageConfig.layout="auto"]
+   * @param {RegExp} [pageConfig.match]             url pattern (debug note only)
+   * @param {string} [pageConfig.nav]               custom tabs <ul> selector
+   * @param {string} [pageConfig.content]           custom panes container selector
+   * @returns {Function}                            the new appendtab_ function
+   *
+   * Examples:
+   *   DCDN.registerTabPage("school_contract");
+   *   DCDN.appendtab_school_contract({ id: "marks", title: "الدرجات", content: "..." });
+   *
+   *   DCDN.registerTabPage("my_screen", { nav: "#myTabs", content: "#myTabsContent" });
+   */
   TAB_PAGES[pageName] = Object.assign({ layout: "auto" }, pageConfig || {});
   DCDN["appendtab_" + pageName] = function (options) {
     return DCDN.appendTab(pageName, options);
@@ -2465,7 +3568,50 @@ function listenToNativeTabs(containers) {
 }
 
 DCDN.appendTab = function appendTab(pageName, options) {
-  /* docs + examples: DCDN.help("appendTab")  or  DCDN.appendTab in the console */
+  /**
+   * Add a custom tab to the current view / show page.
+   * Usually called through a page alias:  DCDN.appendtab_invoice(options),
+   * DCDN.appendtab_client(options), DCDN.appendtab_entity(options) ...
+   * Works on classic and v2 layouts and on the mobile accordion.
+   *
+   * @param {string} pageName                       registered page name or "auto"
+   * @param {Object} options
+   * @param {string} options.id                     unique id (pane id)
+   * @param {string|{ar:string,en:string}} [options.title]
+   * @param {string|Element|function(HTMLElement, Object):(string|Promise<string>)} [options.content]
+   * @param {string} [options.url]                  page to load into the tab
+   * @param {string} [options.selector=".list-table, table, .panel"]   part of `url` to keep
+   * @param {boolean} [options.lazy=true]           load on first open
+   * @param {boolean} [options.reload=false]        reload on every open
+   * @param {boolean} [options.active=false]        open right away
+   * @param {number} [options.position]             insert index
+   * @param {number|string} [options.badge]
+   * @param {function(HTMLElement, Object):void} [options.onOpen]
+   * @param {number} [options.timeout=15000]        ms to wait for the tabs
+   * @returns {Promise<{id:string, link:HTMLElement, li:HTMLElement, pane:HTMLElement, layout:string,
+   *                    open:Function, setContent:Function, setBadge:Function, reload:Function, remove:Function}>}
+   *
+   * Examples:
+   *   // 1) list page inside the tab
+   *   DCDN.appendtab_invoice({
+   *     id: "services_log",
+   *     title: { ar: "سجل الطلبات", en: "Services Log" },
+   *     url: "/v2/owner/entity/le_invoice-items/list?filter[invoice_id]=" + DCDN.getRecordId(),
+   *   });
+   *
+   *   // 2) your own HTML from the API
+   *   DCDN.appendtab_entity({
+   *     id: "payments",
+   *     title: "المدفوعات",
+   *     content: async function () {
+   *       const res = await DCDN.bulkFetch("/v2/api/entity/le_x/list/1", { filters: { ref: DCDN.raw.getRecordId() } });
+   *       return "<ul>" + res.data.map(r => "<li>" + r.id + "</li>").join("") + "</ul>";
+   *     },
+   *   }).then(res => res.data.setBadge(3));      // res.data = the tab controller
+   *
+   *   // 3) any page name
+   *   DCDN.appendTab("client", { id: "notes", title: "Notes", onOpen: pane => console.log(pane) });
+   */
   if (pageName && typeof pageName === "object") {
     // allow DCDN.appendTab({ ... })
     options = pageName;
@@ -2753,7 +3899,67 @@ function loadDropdownOptions(settings) {
 }
 
 DCDN.addDropdown = function addDropdown(target, settings) {
-  /* docs + examples: DCDN.help("addDropdown")  or  DCDN.addDropdown in the console */
+  /**
+   * Replace a field with a dropdown whose options YOU choose.
+   * The original field stays in the form (hidden) and receives the chosen value,
+   * so Daftra saves it normally.
+   *
+   * @param {string|Element} target                         field(s) to replace
+   * @param {Object} settings
+   * @param {Array|function():Array|Promise<Array>} [settings.options]   "text", { value, text } or raw objects
+   * @param {Object} [settings.source]                     load options from the API
+   * @param {string} settings.source.url
+   * @param {Object} [settings.source.filters]
+   * @param {Object} [settings.source.sort]
+   * @param {number} [settings.source.perPage]
+   * @param {string} [settings.source.valueKey="id"]
+   * @param {string} [settings.source.textKey="name"]
+   * @param {boolean} [settings.source.all=true]           false = first page only
+   * @param {string|function(Object):*} [settings.valueKey="value"]   key, "dot.path" or function
+   * @param {string|function(Object):*} [settings.textKey="text"]
+   * @param {"value"|"text"} [settings.saveAs="value"]     written into the original field
+   * @param {string|{ar:string,en:string}} [settings.placeholder]
+   * @param {boolean} [settings.hideOriginal=true]
+   * @param {boolean} [settings.searchable=false]          select2 when loaded
+   * @param {string} [settings.className]
+   * @param {boolean} [settings.live=false]                also fields added later
+   * @param {function({value:string, text:string, data:*}, Object):void} [settings.onSelect]
+   * @returns {Promise<Object|Object[]>}                   controller(s): { select, original, options, getSelected(), setValue(v), setOptions(list), destroy() }
+   *
+   * ---------------------------------------------------------------------------
+   * A) Single-line text field
+   *    The chosen value (or text) is written into the hidden input.
+   *
+   *    DCDN.addDropdown('[id$="--single_line_field"]', {
+   *      options: ["الرياض", "جدة", { value: "dmm", text: "الدمام" }],
+   *      saveAs: "text",             // write the text ("value" = default)
+   *    });
+   *
+   * B) Dynamic dropdown  (plain <select>, selectize or select2)
+   *    The chosen option is APPENDED to the original select (if missing) and selected.
+   *
+   *    DCDN.addDropdown("#data-le_custom_data_client--city", {
+   *      source: {
+   *        url: "/v2/api/entity/le_cities/list/1",
+   *        filters: { active: 1 },
+   *        valueKey: "id",
+   *        textKey: "city",
+   *      },
+   *    });
+   *
+   * C) Every subform row, also rows added later
+   *    DCDN.addDropdown('[id$="--item_name"]', { options: loadItems, live: true });
+   * ---------------------------------------------------------------------------
+   *
+   * Example with onSelect (fill other fields from the selected row):
+   *   DCDN.addDropdown('[id$="--product_name"]', {
+   *     source: { url: "/v2/api/entity/product/list/1", textKey: "name" },
+   *     saveAs: "text",
+   *     onSelect: function (option) {
+   *       DCDN.setFieldValue("unit_price", option.data.unit_price);
+   *     },
+   *   });
+   */
   settings = settings || {};
 
   // live mode: enhance now + every matching field added later
@@ -2943,7 +4149,43 @@ function readBaseNumber(source, targetInput) {
 }
 
 DCDN.calculatePercent = function calculatePercent(target, settings) {
-  /* docs + examples: DCDN.help("calculatePercent")  or  DCDN.calculatePercent in the console */
+  /**
+   * Add a "%" input BEFORE a value input.
+   *   - typing a percent fills the value:   value = base × percent / 100
+   *   - typing a value updates the percent: percent = value / base × 100
+   *   - when the base input changes, the value is recalculated
+   * The target input keeps 70% of its width, the % input takes the rest.
+   *
+   * @param {string|Element} target                        value input(s)
+   * @param {Object} settings
+   * @param {string|Element|number|function(HTMLElement):number} settings.base   what to take the percent of
+   * @param {string} [settings.baseScope]                  find `base` inside target.closest(baseScope)
+   * @param {number} [settings.decimals=2]
+   * @param {number} [settings.ratio=0.7]                  width kept for the target
+   * @param {number} [settings.max=100]
+   * @param {boolean} [settings.sync=true]                 value -> percent too
+   * @param {string|{ar:string,en:string}} [settings.placeholder="%"]
+   * @param {boolean} [settings.live=false]
+   * @param {function({percent:number, value:number, base:number, target:HTMLElement}):void} [settings.onChange]
+   * @returns {Object|Object[]}                            controller(s): { percentInput, target, getPercent(), setPercent(p), recalc(), destroy() }
+   *
+   * Examples:
+   *   // discount value = % of the subtotal shown on the page
+   *   DCDN.calculatePercent('[id$="--discountvalue"]', { base: "#subtotal" });
+   *
+   *   // one base per row, also new rows
+   *   DCDN.calculatePercent(".value-input", { base: ".row-total", baseScope: "tr", live: true });
+   *
+   *   // base from code, 3 decimals
+   *   DCDN.calculatePercent("#amount", {
+   *     base: () => DCDN.parseNumber($("#invoice-total").text()),
+   *     decimals: 3,
+   *     onChange: ({ percent, value }) => console.log(percent + "% =", value),
+   *   });
+   *
+   *   const ctrl = DCDN.calculatePercent("#amount", { base: 1000 }).data;
+   *   ctrl.setPercent(15);   // #amount = 150.00
+   */
   settings = settings || {};
 
   if (typeof target === "string" && settings.live) {
@@ -3115,7 +4357,19 @@ function createPercentInput(targetInput, settings) {
 DCDN.table = {};
 
 DCDN.table.addSerials = function addSerials(table, options) {
-  /* docs + examples: DCDN.help("table.addSerials")  or  DCDN.table.addSerials in the console */
+  /**
+   * Add a serial-number column at the start of a table (was addserials).
+   * Runs only once per table.
+   *
+   * @param {string|Element} [table="#listing_table"]
+   * @param {Object} [options]
+   * @param {string|{ar:string,en:string}} [options.header]
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.table.addSerials();                                    // #listing_table
+   *   DCDN.table.addSerials("#my-table", { header: { ar: "م", en: "#" } });
+   */
   options = options || {};
   var tableElement = getElement(table || "#listing_table");
   if (!tableElement || tableElement.dataset.dcdnSerials) return;
@@ -3133,7 +4387,19 @@ DCDN.table.addSerials = function addSerials(table, options) {
 };
 
 DCDN.table.swapColumns = function swapColumns(firstIndex, secondIndex, table) {
-  /* docs + examples: DCDN.help("table.swapColumns")  or  DCDN.table.swapColumns in the console */
+  /**
+   * Swap two columns in every row: content + id + class.
+   * Same as the standard  swap(in1, in2, "listing_table")  used in templates.
+   *
+   * @param {number} firstIndex                 0-based
+   * @param {number} secondIndex
+   * @param {string|Element} table              table id ("listing_table"), selector or element
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.swap(3, 6, "listing_table");
+   *   DCDN.table.swapColumns(0, 1, "#my-table");
+   */
   var tableElement =
     typeof table === "string" && !/^[#.\[]/.test(table) ? document.getElementById(table) : getElement(table);
   if (!tableElement) return;
@@ -3159,7 +4425,16 @@ DCDN.table.swapColumns = function swapColumns(firstIndex, secondIndex, table) {
 DCDN.swap = DCDN.table.swapColumns;
 
 DCDN.table.hideColumn = function hideColumn(table, columnIndex) {
-  /* docs + examples: DCDN.help("table.hideColumn")  or  DCDN.table.hideColumn in the console */
+  /**
+   * Hide one column (0-based) in every row.
+   *
+   * @param {string|Element} table
+   * @param {number} columnIndex                0-based
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.table.hideColumn("#listing_table", 4);
+   */
   var tableElement = getElement(table);
   if (!tableElement) return;
   for (var i = 0, row; (row = tableElement.rows[i]); i++) {
@@ -3168,7 +4443,16 @@ DCDN.table.hideColumn = function hideColumn(table, columnIndex) {
 };
 
 DCDN.table.toJSON = function toJSON(table) {
-  /* docs + examples: DCDN.help("table.toJSON")  or  DCDN.table.toJSON in the console */
+  /**
+   * Read a table into an array of objects (first row = keys).
+   *
+   * @param {string|Element} table
+   * @returns {Object[]}                        first row = keys
+   *
+   * Example:
+   *   DCDN.table.toJSON("#report")
+   *   // [{ "Name": "Ahmed", "Total": "1,200" }, ...]
+   */
   var tableElement = getElement(table);
   if (!tableElement || !tableElement.rows.length) return [];
 
@@ -3188,7 +4472,17 @@ DCDN.table.toJSON = function toJSON(table) {
 };
 
 DCDN.table.exportToExcel = function exportToExcel(table, filename) {
-  /* docs + examples: DCDN.help("table.exportToExcel")  or  DCDN.table.exportToExcel in the console */
+  /**
+   * Download a table as an .xls file that Excel opens (RTL sheet on Arabic pages).
+   *
+   * @param {string|Element} table
+   * @param {string} [filename="export"]        without extension
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.exportTableToExcel("#report", "sales-report");
+   *   DCDN.table.exportToExcel(document.querySelector(".list-table"));
+   */
   var tableElement = getElement(table);
   if (!tableElement) return;
   var rightToLeft = DCDN.isRTL();
@@ -3208,7 +4502,19 @@ DCDN.table.exportToExcel = function exportToExcel(table, filename) {
 DCDN.exportTableToExcel = DCDN.table.exportToExcel;
 
 DCDN.exportCSV = function exportCSV(rows, filename) {
-  /* docs + examples: DCDN.help("exportCSV")  or  DCDN.exportCSV in the console */
+  /**
+   * Download rows (array of objects) or a table as a CSV file (UTF-8, Excel friendly).
+   *
+   * @param {Object[]|string|Element} rows      rows, or a table
+   * @param {string} [filename="export"]
+   * @returns {void}
+   *
+   * Examples:
+   *   const res = await DCDN.bulkFetch("/v2/api/entity/client/list/1");
+   *   DCDN.exportCSV(res.data, "clients");
+   *
+   *   DCDN.exportCSV("#report", "report");     // from a table
+   */
   if (rows && (rows.nodeType || typeof rows === "string")) rows = DCDN.table.toJSON(rows);
   rows = rows || [];
   var headers = rows.length ? Object.keys(rows[0]) : [];
@@ -3232,7 +4538,16 @@ DCDN.exportCSV = function exportCSV(rows, filename) {
 };
 
 DCDN.downloadBlob = function downloadBlob(blob, filename) {
-  /* docs + examples: DCDN.help("downloadBlob")  or  DCDN.downloadBlob in the console */
+  /**
+   * Download any Blob as a file.
+   *
+   * @param {Blob} blob
+   * @param {string} filename
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.downloadBlob(new Blob([JSON.stringify(data)], { type: "application/json" }), "data.json");
+   */
   var link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = filename;
@@ -3245,7 +4560,22 @@ DCDN.downloadBlob = function downloadBlob(blob, filename) {
 };
 
 DCDN.formatCells = function formatCells(selector, options) {
-  /* docs + examples: DCDN.help("formatCells")  or  DCDN.formatCells in the console */
+  /**
+   * Re-format the amounts inside elements (was removeCurr).
+   *
+   * @param {string} selector
+   * @param {Object} [options]
+   * @param {number} [options.decimals=2]
+   * @param {string} [options.prefix]
+   * @param {string} [options.suffix]
+   * @param {string} [options.suffixHtml]       HTML after the number (overrides suffix)
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.formatCells(".removeCurr");                                  // "1234.5" -> "1,234.50"
+   *   DCDN.formatCells(".removeCurr", { suffix: " ر.س" });
+   *   DCDN.formatCells(".amount", { suffixHtml: '<span class="sar_symbol">&nbsp;元</span>' });
+   */
   options = options || {};
   getElements(selector).forEach(function (element) {
     var number = DCDN.parseNumber(element.textContent);
@@ -3321,7 +4651,17 @@ function arabicGroupWithScale(group, forms) {
 }
 
 DCDN.numberToArabicWords = function numberToArabicWords(number) {
-  /* docs + examples: DCDN.help("numberToArabicWords")  or  DCDN.numberToArabicWords in the console */
+  /**
+   * Whole number -> Arabic words (no currency).
+   *
+   * @param {number|string} number             whole part is used
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.numberToArabicWords(21)        // "واحد وعشرون"
+   *   DCDN.numberToArabicWords(1250)      // "ألف ومائتان وخمسون"
+   *   DCDN.numberToArabicWords(2000000)   // "مليونان"
+   */
   number = Math.floor(Math.abs(Number(number) || 0));
   if (number === 0) return "صفر";
 
@@ -3359,7 +4699,15 @@ function englishBelow1000(number) {
 }
 
 DCDN.numberToEnglishWords = function numberToEnglishWords(number) {
-  /* docs + examples: DCDN.help("numberToEnglishWords")  or  DCDN.numberToEnglishWords in the console */
+  /**
+   * Whole number -> English words (no currency).
+   *
+   * @param {number|string} number
+   * @returns {string}
+   *
+   * Example:
+   *   DCDN.numberToEnglishWords(1250)   // "One Thousand Two Hundred Fifty"
+   */
   number = Math.floor(Math.abs(Number(number) || 0));
   if (number === 0) return "Zero";
   var parts = [];
@@ -3395,7 +4743,30 @@ DCDN.currencies = {
 };
 
 DCDN.numberToWords = function numberToWords(amount, options) {
-  /* docs + examples: DCDN.help("numberToWords")  or  DCDN.numberToWords in the console */
+  /**
+   * Amount -> words with currency (tafqeet / convertFN).
+   *
+   * @param {number|string} amount
+   * @param {Object} [options]
+   * @param {"ar"|"en"} [options.lang]          default page language
+   * @param {string|Object} [options.currency]  SAR EGP AED KWD BHD OMR QAR JOD IQD USD, or a DCDN.currencies-style object
+   * @param {string|boolean} [options.prefix]   default "فقط " / "Only " (false = none)
+   * @param {string|boolean} [options.suffix]   default " لا غير" / "" (false = none)
+   * @returns {string}
+   *
+   * Examples:
+   *   DCDN.numberToWords(1250.5, { currency: "SAR", lang: "ar" })
+   *   // "فقط ألف ومائتان وخمسون ريالاً وخمسون هللة لا غير"
+   *
+   *   DCDN.numberToWords(1250.5, { currency: "SAR", lang: "en" })
+   *   // "Only One Thousand Two Hundred Fifty Riyals and Fifty Halalas"
+   *
+   *   DCDN.numberToWords(3000, { currency: "EGP", prefix: false, suffix: false })
+   *   // "ثلاثة آلاف جنيه"
+   *
+   *   // in a page: write the total in words under the invoice total
+   *   $("#total-words").text(DCDN.numberToWords($("#invoice-total").text(), { currency: "SAR" }).data);
+   */
   options = options || {};
   var lang = options.lang || DCDN.detectLang();
   var currency =
@@ -3507,7 +4878,18 @@ function ensureNativeStyles() {
 /* ============================ native loader ============================== */
 
 DCDN.nativeLoader = function nativeLoader(show, text) {
-  /* docs + examples: DCDN.help("nativeLoader")  or  DCDN.nativeLoader in the console */
+  /**
+   * Daftra's OWN full-page loader (.page-loader + .spinner-border), with optional text.
+   * Calling it again while shown only changes the text.
+   *
+   * @param {boolean} show                      true = show, false = hide (after `hideDelay` ms)
+   * @param {string|{ar:string,en:string}} [text]  text under the spinner
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.nativeLoader(true, { ar: "جارِ التحميل...", en: "Loading..." });
+   *   DCDN.nativeLoader(false);
+   */
   ensureNativeStyles();
   var loader = document.querySelector(".page-loader.dcdn-native-loader") || document.querySelector(".page-loader");
   if (show) {
@@ -3531,7 +4913,20 @@ DCDN.nativeLoader = function nativeLoader(show, text) {
 };
 
 DCDN.initPage = function initPage(work, text) {
-  /* docs + examples: DCDN.help("initPage")  or  DCDN.initPage in the console */
+  /**
+   * Run a page set-up under Daftra's native loader, so users never see the page
+   * half changed. The loader is hidden on every way out (errors included).
+   *
+   * @param {Function|Promise} work                    set-up function (may be async) or a Promise
+   * @param {string|{ar:string,en:string}} [text]      loader text (default "Initializing page...")
+   * @returns {Promise<*>}                             what `work` returned
+   *
+   * Example:
+   *   DCDN.initPage(async function () {
+   *     DCDN.prependBreadcrumb({ label: "NTMP", url: "/v2/owner/entity/app_924_ntmp_dashboard/list" });
+   *     await loadSomething();
+   *   });
+   */
   DCDN.nativeLoader(true, text || { ar: "جارِ تهيئة الصفحة...", en: "Initializing page..." });
   return Promise.resolve()
     .then(function () {
@@ -3545,7 +4940,27 @@ DCDN.initPage = function initPage(work, text) {
 /* ============================ native alerts ============================== */
 
 DCDN.nativeAlert = function nativeAlert(text, type, options) {
-  /* docs + examples: DCDN.help("nativeAlert")  or  DCDN.nativeAlert in the console */
+  /**
+   * Show a message EXACTLY like Daftra does on the current page
+   * (was showToastifyAlert in the Language Packs):
+   *   1. page has Daftra's $.toast plugin (v2 create/edit)  -> $.toast
+   *   2. classic /owner/ page (.flash-wrapper)               -> Daftra's server-style banner
+   *   3. other v2 pages (list, show)                          -> Daftra's v2 ui-flash-message banner
+   * Banners (2, 3) replace the previous one and scroll into view.
+   *
+   * @param {string|{ar:string,en:string}} text        message (HTML allowed)
+   * @param {"success"|"error"|"warning"} [type="success"]
+   * @param {Object}  [options]
+   * @param {"auto"|"toast"|"classic"|"v2"} [options.mode="auto"]  force one of the 3 styles
+   * @param {boolean} [options.scroll=true]             scroll the banner into view
+   * @param {string}  [options.container]               selector to put a v2 banner in (default the page content)
+   * @returns {Element|null}                            the banner element (null for $.toast)
+   *
+   * Examples:
+   *   DCDN.nativeAlert("تم الحفظ");
+   *   DCDN.nativeAlert({ ar: "حدث خطأ", en: "Something went wrong" }, "error");
+   *   DCDN.nativeAlert("Check the settings", "warning", { mode: "v2", scroll: false });
+   */
   options = options || {};
   ensureNativeStyles();
   var message = pickText(text);
@@ -3609,7 +5024,21 @@ DCDN.nativeAlert = function nativeAlert(text, type, options) {
 };
 
 DCDN.flashToast = function flashToast(text, type, options) {
-  /* docs + examples: DCDN.help("flashToast")  or  DCDN.flashToast in the console */
+  /**
+   * Floating, auto-closing banner that LOOKS like Daftra's flash messages
+   * (the Toastify version of the Language Pack, without the Toastify library).
+   *
+   * @param {string|{ar:string,en:string}} text                     message (HTML allowed)
+   * @param {"success"|"error"|"warning"|"info"} [type="success"]
+   * @param {Object}  [options]
+   * @param {"top"|"bottom"} [options.gravity="top"]  screen edge
+   * @param {number}  [options.timeout]               ms before closing (success 2500, warning 4000, error 5000; 0 = stay)
+   * @returns {{el: Element, close: Function}}
+   *
+   * Examples:
+   *   DCDN.flashToast("تم الحفظ");
+   *   DCDN.flashToast({ ar: "تعذر الحفظ", en: "Could not save" }, "error", { gravity: "bottom" });
+   */
   options = options || {};
   ensureNativeStyles();
   var kind = ["success", "error", "warning", "info"].indexOf(type) > -1 ? type : "success";
@@ -3643,7 +5072,22 @@ DCDN.flashToast = function flashToast(text, type, options) {
 var NOTICE_KEY = "dcdn_pending_notice";
 
 DCDN.noticeAfterReload = function noticeAfterReload(text, type, options) {
-  /* docs + examples: DCDN.help("noticeAfterReload")  or  DCDN.noticeAfterReload in the console */
+  /**
+   * Save a message to show on the NEXT page load (e.g. after location.reload()
+   * or a redirect). Show it there with DCDN.showPendingNotice() (called automatically
+   * on every page where the CDN loads).
+   *
+   * @param {string|{ar:string,en:string}} text
+   * @param {"success"|"error"|"warning"} [type="success"]
+   * @param {Object} [options]
+   * @param {"native"|"flash"|"toast"} [options.style="native"]  how to show it (nativeAlert / flashToast / toast)
+   * @param {number} [options.maxAgeMs=60000]     ignore it if the next page loads later than this
+   * @returns {boolean}                            false when sessionStorage is blocked
+   *
+   * Example:
+   *   DCDN.noticeAfterReload({ ar: "تم التحديث", en: "Updated" });
+   *   location.reload();
+   */
   options = options || {};
   try {
     sessionStorage.setItem(NOTICE_KEY, JSON.stringify({
@@ -3659,7 +5103,14 @@ DCDN.noticeAfterReload = function noticeAfterReload(text, type, options) {
 };
 
 DCDN.showPendingNotice = function showPendingNotice() {
-  /* docs + examples: DCDN.help("showPendingNotice")  or  DCDN.showPendingNotice in the console */
+  /**
+   * Show (once) the message saved by DCDN.noticeAfterReload. Runs automatically on page load.
+   *
+   * @returns {Object|null}  the notice { text, type, style } that was shown, or null
+   *
+   * Example:
+   *   DCDN.showPendingNotice();
+   */
   var notice = null;
   try {
     notice = JSON.parse(sessionStorage.getItem(NOTICE_KEY) || "null");
@@ -3685,7 +5136,16 @@ function resolveFieldElement(field) {
 }
 
 DCDN.getFieldColumn = function getFieldColumn(field) {
-  /* docs + examples: DCDN.help("getFieldColumn")  or  DCDN.getFieldColumn in the console */
+  /**
+   * The column (label + input) of a form field: its nearest [class*="col-lg-"] ancestor,
+   * or the .form-group inside it (subform rows), which is what Daftra's red-border CSS targets.
+   *
+   * @param {string|Element} field   field id ("data-le_x--qty"), field key ("qty"), selector or element
+   * @returns {Element|null}
+   *
+   * Example:
+   *   DCDN.getFieldColumn("data-le_x--qty");
+   */
   var input = resolveFieldElement(field);
   if (!input) return null;
   var column = input.closest('[class*="col-lg-"]') || input.closest(".form-group") || input.parentNode;
@@ -3694,7 +5154,15 @@ DCDN.getFieldColumn = function getFieldColumn(field) {
 };
 
 DCDN.clearFieldError = function clearFieldError(field) {
-  /* docs + examples: DCDN.help("clearFieldError")  or  DCDN.clearFieldError in the console */
+  /**
+   * Remove the message + red border DCDN.showFieldError added to one field.
+   *
+   * @param {string|Element} field   field id, field key, selector or element
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.clearFieldError("qty");
+   */
   var column = DCDN.getFieldColumn(field);
   if (!column) return;
   if (column.classList.contains("dcdn-field-invalid")) {
@@ -3708,7 +5176,15 @@ DCDN.clearFieldError = function clearFieldError(field) {
 };
 
 DCDN.clearAllFieldErrors = function clearAllFieldErrors(form) {
-  /* docs + examples: DCDN.help("clearAllFieldErrors")  or  DCDN.clearAllFieldErrors in the console */
+  /**
+   * Remove every message DCDN.showFieldError added inside a form.
+   *
+   * @param {string|Element} [form=document]   form selector / element
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.clearAllFieldErrors("form");
+   */
   var root = getElement(form) || document;
   getElements(".dcdn-field-invalid", root).forEach(function (column) {
     FIELD_INVALID_CLASSES.forEach(function (className) {
@@ -3721,7 +5197,17 @@ DCDN.clearAllFieldErrors = function clearAllFieldErrors(form) {
 };
 
 DCDN.showFieldError = function showFieldError(field, message) {
-  /* docs + examples: DCDN.help("showFieldError")  or  DCDN.showFieldError in the console */
+  /**
+   * Red message under a form field, with Daftra's own classes (.is-invalid + .form-validation > p.error).
+   * The message goes away as soon as the field changes.
+   *
+   * @param {string|Element} field                       field id, field key, selector or element
+   * @param {string|{ar:string,en:string}} message       what to fix
+   * @returns {boolean}                                  false when the field was not found
+   *
+   * Example:
+   *   DCDN.showFieldError("data-le_x--qty", { ar: "أدخل الكمية", en: "Enter the quantity" });
+   */
   var input = resolveFieldElement(field);
   var column = DCDN.getFieldColumn(input);
   if (!input || !column) return false;
@@ -3743,7 +5229,23 @@ DCDN.showFieldError = function showFieldError(field, message) {
 };
 
 DCDN.bindSaveValidation = function bindSaveValidation(form, collectErrors, beforeValidate) {
-  /* docs + examples: DCDN.help("bindSaveValidation")  or  DCDN.bindSaveValidation in the console */
+  /**
+   * Block a form's save while `collectErrors()` returns errors, and show them under the fields.
+   * Runs in the capture phase on submit AND on every submit button, before Daftra's own handlers.
+   *
+   * @param {string|Element} form                                    form selector / element
+   * @param {function(): Array<{field:(string|Element), message:(string|{ar:string,en:string})}>} collectErrors
+   *        return [] when everything is valid  (`fieldId` is accepted as an alias of `field`)
+   * @param {Function} [beforeValidate]                              runs first (e.g. sync hidden values)
+   * @returns {boolean}                                              false when the form was not found / already bound
+   *
+   * Example:
+   *   DCDN.bindSaveValidation("form", function () {
+   *     var errors = [];
+   *     if (!DCDN.raw.getFieldValue("qty")) errors.push({ field: "qty", message: { ar: "أدخل الكمية", en: "Enter the quantity" } });
+   *     return errors;
+   *   });
+   */
   var formElement = getElement(form);
   if (!formElement || formElement.__dcdnSaveValidation) return false;
   formElement.__dcdnSaveValidation = true;
@@ -3772,7 +5274,21 @@ DCDN.bindSaveValidation = function bindSaveValidation(form, collectErrors, befor
 /* ============================== breadcrumbs ============================== */
 
 DCDN.prependBreadcrumb = function prependBreadcrumb(options) {
-  /* docs + examples: DCDN.help("prependBreadcrumb")  or  DCDN.prependBreadcrumb in the console */
+  /**
+   * Put a breadcrumb in FRONT of the page's own trail. Works on both Daftra layouts:
+   * list/show pages (<ol id="header-breadcrumb">) and create/edit pages (.header-breadcrumbs).
+   * Safe to call more than once (added once per id).
+   *
+   * @param {Object} options
+   * @param {string|{ar:string,en:string}} options.label   crumb text
+   * @param {string} options.url                            crumb link
+   * @param {string} [options.id="dcdn-crumb"]              marker so it is added only once
+   * @param {string} [options.onlyFor]                      entity key: only on that entity's pages
+   * @returns {Element|null}                                the new crumb
+   *
+   * Example:
+   *   DCDN.prependBreadcrumb({ label: { ar: "إعدادات دورة العمل", en: "Workflow Settings" }, url: "/v2/owner/workflow/settings" });
+   */
   options = options || {};
   if (options.onlyFor && !new RegExp("/entity/(workflow/)?" + options.onlyFor + "/").test(location.pathname)) return null;
   var marker = options.id || "dcdn-crumb";
@@ -3797,7 +5313,26 @@ DCDN.prependBreadcrumb = function prependBreadcrumb(options) {
 };
 
 DCDN.setBreadcrumbs = function setBreadcrumbs(options) {
-  /* docs + examples: DCDN.help("setBreadcrumbs")  or  DCDN.setBreadcrumbs in the console */
+  /**
+   * Rewrite the page's breadcrumb trail (both layouts).
+   *
+   * @param {Object} options
+   * @param {{label:(string|{ar:string,en:string}), url:string}} [options.first]   rename / relink the first crumb
+   * @param {boolean} [options.hideMiddle=false]          hide every crumb between the first and the active one
+   * @param {string|{ar:string,en:string}} [options.active]  text of the last (current page) crumb
+   * @param {boolean} [options.onlyActive=false]          remove every crumb except the last one (wizards)
+   * @param {string|{ar:string,en:string}|boolean} [options.title]  browser tab title (true = same as `active`)
+   * @returns {void}
+   *
+   * Examples:
+   *   DCDN.setBreadcrumbs({
+   *     first: { label: { ar: "إعدادات دورات العمل", en: "Workflow Settings" }, url: "/v2/owner/workflow/settings" },
+   *     hideMiddle: true,
+   *     active: { ar: "صلاحيات أوامر التوصيل", en: "Delivery Orders Permissions" },
+   *     title: true,
+   *   });
+   *   DCDN.setBreadcrumbs({ onlyActive: true, active: { ar: "إعداد رصد", en: "Rasd Setup" }, title: true });
+   */
   options = options || {};
   [
     { items: "#header-breadcrumb .breadcrumb-item" },
@@ -3834,7 +5369,23 @@ DCDN.setBreadcrumbs = function setBreadcrumbs(options) {
 /* ============================ steps header ============================== */
 
 DCDN.stepsHeader = function stepsHeader(steps, currentStep, options) {
-  /* docs + examples: DCDN.help("stepsHeader")  or  DCDN.stepsHeader in the console */
+  /**
+   * Numbered steps strip for wizards: a dot per step, a tick on finished steps.
+   *
+   * @param {Array<{title:(string|{ar:string,en:string}), number?:number, url?:string}>} steps
+   * @param {number} currentStep          `number` of the current step (or its 1-based position)
+   * @param {Object} [options]
+   * @param {string|Element} [options.target]   insert into this container (prepend)
+   * @param {boolean} [options.links=false]     make finished steps clickable (needs step.url)
+   * @returns {Element}                         the <ol class="dcdn-steps">
+   *
+   * Example:
+   *   DCDN.stepsHeader([
+   *     { number: 1, title: { ar: "الربط", en: "Connect" } },
+   *     { number: 2, title: { ar: "الحسابات", en: "Accounts" } },
+   *     { number: 4, title: { ar: "الإعدادات", en: "Settings" } },
+   *   ], 2, { target: ".main-area > .container" });
+   */
   options = options || {};
   ensureNativeStyles();
   var currentIndex = -1;
@@ -3868,7 +5419,26 @@ DCDN.stepsHeader = function stepsHeader(steps, currentStep, options) {
 var ADD_BUTTON_SELECTOR = '.pages-head-btns .add-new-btn, a[name="Add-Work-Flow"]';
 
 DCDN.addListButton = function addListButton(options) {
-  /* docs + examples: DCDN.help("addListButton")  or  DCDN.addListButton in the console */
+  /**
+   * Add a button to a list page's top bar, in Daftra's style, beside "Add".
+   *
+   * @param {Object} options
+   * @param {string} options.id                               unique id (added once)
+   * @param {string|{ar:string,en:string}} options.label      button text
+   * @param {string} [options.icon="mdi-plus"]                mdi icon class
+   * @param {string} [options.href="#"]                       link (ignored when onClick is given)
+   * @param {function(Event, Element)} [options.onClick]      click handler
+   * @param {string} [options.className="btn-secondary"]      extra classes
+   * @param {string} [options.container=".pages-head-btns"]   bar selector
+   * @returns {Element|null}                                  the button, null when the bar is missing
+   *
+   * Example:
+   *   DCDN.addListButton({
+   *     id: "refresh-accounts", icon: "mdi-refresh",
+   *     label: { ar: "تحديث الحسابات", en: "Refresh Accounts" },
+   *     onClick: function () { DCDN.noticeAfterReload("Done"); location.reload(); },
+   *   });
+   */
   options = options || {};
   var bar = document.querySelector(options.container || ".pages-head-btns");
   if (!bar) return null;
@@ -3891,7 +5461,18 @@ DCDN.addListButton = function addListButton(options) {
 };
 
 DCDN.hideEarly = function hideEarly(selector, id) {
-  /* docs + examples: DCDN.help("hideEarly")  or  DCDN.hideEarly in the console */
+  /**
+   * Hide elements with CSS right away (even before Daftra paints them), so they never flash.
+   * Call reveal() later to show them again.
+   *
+   * @param {string} selector        CSS selector to hide
+   * @param {string} [id]            style id (default derived from the selector)
+   * @returns {{reveal: Function, style: Element}}
+   *
+   * Example:
+   *   var add = DCDN.raw.hideEarly('.pages-head-btns .add-new-btn, a[name="Add-Work-Flow"]');
+   *   if (canAdd) add.reveal();
+   */
   var styleId = id || "dcdn-hide-" + selector.replace(/[^a-z0-9]+/gi, "-").slice(0, 40);
   var style = DCDN.injectCSS(selector + " { display: none !important; }", styleId);
   style.setAttribute("data-dcdn-hide-early", selector);
@@ -3905,7 +5486,19 @@ DCDN.hideEarly = function hideEarly(selector, id) {
 };
 
 DCDN.hideElements = function hideElements(selectors, id) {
-  /* docs + examples: DCDN.help("hideElements")  or  DCDN.hideElements in the console */
+  /**
+   * Hide elements permanently with one CSS rule (e.g. action buttons, a form field container).
+   *
+   * @param {string|string[]} selectors   one selector or a list
+   * @param {string} [id]                 style id (added once)
+   * @returns {Element}                   the <style>
+   *
+   * Example:
+   *   DCDN.hideElements([
+   *     '.btn-group[aria-label="item-actions-group"] a[href$="/edit"]',
+   *     '.btn-group[aria-label="item-actions-group"] a[data-delete-prompt]',
+   *   ], "hide-workflow-actions");
+   */
   var list = Array.isArray(selectors) ? selectors : [selectors];
   // one rule per selector: an unsupported selector (e.g. :has in old browsers) can't break the others
   var css = list
@@ -3917,7 +5510,17 @@ DCDN.hideElements = function hideElements(selectors, id) {
 };
 
 DCDN.hideFormField = function hideFormField(fieldKey, entityKey) {
-  /* docs + examples: DCDN.help("hideFormField")  or  DCDN.hideFormField in the console */
+  /**
+   * Hide a v2 form field (label + input) with CSS.
+   *
+   * @param {string} fieldKey             field key, e.g. "status"
+   * @param {string} [entityKey]          entity key (default: from the current URL)
+   * @returns {Element}                   the <style>
+   *
+   * Example:
+   *   DCDN.hideFormField("status");
+   *   DCDN.hideFormField("status", "le_workflow-type-entity-36");
+   */
   var key = entityKey || DCDN.getPageInfo().entity;
   return DCDN.hideElements(
     [".container-" + key + "_custom_data-" + fieldKey, ".container-" + key + "-" + fieldKey, '[class*="col-lg-"]:has(> * [id$="--' + fieldKey + '"])'],
@@ -3926,7 +5529,19 @@ DCDN.hideFormField = function hideFormField(fieldKey, entityKey) {
 };
 
 DCDN.replaceAddButton = function replaceAddButton(options) {
-  /* docs + examples: DCDN.help("replaceAddButton")  or  DCDN.replaceAddButton in the console */
+  /**
+   * Point the page's native "Add" button somewhere else and rename it
+   * (works on the old theme .add-new-btn and the v4 theme a[name="Add-Work-Flow"]).
+   *
+   * @param {Object} options
+   * @param {string} [options.href]                                new link
+   * @param {string|{ar:string,en:string}} [options.label]         new text
+   * @param {boolean} [options.reveal=true]                        remove a DCDN.hideEarly on the button
+   * @returns {number}                                             how many buttons were changed
+   *
+   * Example:
+   *   DCDN.replaceAddButton({ href: "/v2/owner/entity/app_609_add_delivery/create", label: { ar: "أضف أوامر توصيل", en: "Add Delivery Orders" } });
+   */
   options = options || {};
   var buttons = getElements(ADD_BUTTON_SELECTOR);
   buttons.forEach(function (button) {
@@ -3953,7 +5568,23 @@ DCDN.replaceAddButton = function replaceAddButton(options) {
 };
 
 DCDN.addSidebarLink = function addSidebarLink(options) {
-  /* docs + examples: DCDN.help("addSidebarLink")  or  DCDN.addSidebarLink in the console */
+  /**
+   * Add (or replace) a link at the end of a sidebar group, in BOTH Daftra sidebar layouts
+   * (classic .mn_xxx .sub-menu and v2 li[data-app-sidebar-list-item]). The link is a copy
+   * of the group's last entry, so it looks like its neighbours. Retries while the sidebar is drawn.
+   *
+   * @param {Object} options
+   * @param {string} options.id                                 unique id (an existing link with this id is replaced)
+   * @param {string|{ar:string,en:string}} options.label        link text
+   * @param {string} options.url                                link
+   * @param {string} [options.classicGroup=".mn_dashboard"]     classic layout group selector
+   * @param {number|string} [options.v2Group=1]                 v2 layout data-app-sidebar-list-item value
+   * @param {number} [options.retryMs=10000]                    keep trying this long while the sidebar loads
+   * @returns {Promise<boolean>}                                true when at least one link was added
+   *
+   * Example:
+   *   DCDN.addSidebarLink({ id: "ntmp", label: { ar: "إعداد NTMP", en: "NTMP Setup" }, url: "/v2/owner/entity/app_924_rasd_settings/create" });
+   */
   options = options || {};
   var id = options.id || "dcdn-link";
   function draw() {
@@ -4060,7 +5691,23 @@ DCDN.currencyFormats = {
 });
 
 DCDN.formatCurrency = function formatCurrency(amount, currencyCode, options) {
-  /* docs + examples: DCDN.help("formatCurrency")  or  DCDN.formatCurrency in the console */
+  /**
+   * Amount + currency symbol, placed before/after per currency and page language
+   * (was formatCurrencyHtml). Unknown codes are shown after the amount ("123.00 XYZ").
+   *
+   * @param {number|string} amount                 number or text ("1,250.5")
+   * @param {string} currencyCode                  ISO 4217 code, e.g. "SAR", "EGP", "USD"
+   * @param {Object} [options]
+   * @param {"ar"|"en"} [options.lang]             default page language
+   * @param {number} [options.decimals=2]          fixed decimals
+   * @param {boolean} [options.html=true]          false = plain text (SAR symbol HTML becomes "SAR")
+   * @returns {string}                             e.g. "1,250.50 ج.م" or "$1,250.50"
+   *
+   * Examples:
+   *   DCDN.formatCurrency(1250.5, "EGP")                  // "1,250.50 ج.م" on Arabic pages
+   *   DCDN.formatCurrency(1250.5, "USD")                  // "$1,250.50"
+   *   DCDN.formatCurrency("99", "SAR", { html: false })   // "SAR 99.00"
+   */
   options = options || {};
   var decimals = options.decimals == null ? 2 : options.decimals;
   var number = DCDN.parseNumber(amount);
@@ -4078,7 +5725,16 @@ DCDN.formatCurrency = function formatCurrency(amount, currencyCode, options) {
 /* ============================= entity helpers =========================== */
 
 DCDN.unwrapEntity = function unwrapEntity(response) {
-  /* docs + examples: DCDN.help("unwrapEntity")  or  DCDN.unwrapEntity in the console */
+  /**
+   * Normalize a single-record v2 response: { payload: { data: {...} } } -> {...}
+   * (any other shape is returned as is). DCDN.fetch already does this for you.
+   *
+   * @param {Object} response    raw response JSON
+   * @returns {Object}           the record
+   *
+   * Example:
+   *   DCDN.unwrapEntity({ payload: { data: { id: 5 } } })   // { id: 5 }
+   */
   if (response && typeof response === "object" && response.payload && typeof response.payload === "object" &&
       response.payload.data && typeof response.payload.data === "object") {
     return response.payload.data;
@@ -4089,7 +5745,19 @@ DCDN.unwrapEntity = function unwrapEntity(response) {
 var workflowTypeRequests = {};
 
 DCDN.getWorkflowType = function getWorkflowType(name, options) {
-  /* docs + examples: DCDN.help("getWorkflowType")  or  DCDN.getWorkflowType in the console */
+  /**
+   * Find a workflow type by its exact name ({ id, entity_key, name, ... }).
+   * Cached per name for the page; failures are not cached.
+   *
+   * @param {string} name                     exact workflow name, e.g. "Customer Deliveries"
+   * @param {Object} [options]
+   * @param {boolean} [options.force=false]   ignore the cache
+   * @returns {Promise<Object>}               the workflow_type record (rejects when not found)
+   *
+   * Example:
+   *   const res = await DCDN.getWorkflowType("Customer Deliveries");
+   *   res.data.entity_key                      // "le_workflow-type-entity-36"
+   */
   options = options || {};
   if (!workflowTypeRequests[name] || options.force) {
     workflowTypeRequests[name] = DCDN.request("/v2/api/entity/workflow_type/list", { filters: { name: name } })
@@ -4107,14 +5775,35 @@ DCDN.getWorkflowType = function getWorkflowType(name, options) {
 };
 
 DCDN.getEntityKeyId = function getEntityKeyId(entityKeyOrType) {
-  /* docs + examples: DCDN.help("getEntityKeyId")  or  DCDN.getEntityKeyId in the console */
+  /**
+   * The record id at the end of an entity key ("le_workflow-type-entity-36" -> "36"),
+   * used by /workflow_type/{id}/show and /permissions URLs.
+   *
+   * @param {string|{entity_key:string}} entityKeyOrType   entity key or a workflow_type record
+   * @returns {string|null}
+   *
+   * Example:
+   *   DCDN.getEntityKeyId("le_workflow-type-entity-36")   // "36"
+   */
   var key = typeof entityKeyOrType === "string" ? entityKeyOrType : entityKeyOrType && entityKeyOrType.entity_key;
   var match = /(\d+)$/.exec(key || "");
   return match ? match[1] : null;
 };
 
 DCDN.getFirstRecord = function getFirstRecord(entityKey, options) {
-  /* docs + examples: DCDN.help("getFirstRecord")  or  DCDN.getFirstRecord in the console */
+  /**
+   * The first record of an entity (for single-record "settings" entities), or null when empty.
+   *
+   * @param {string} entityKey                e.g. "app_897_settings"
+   * @param {Object} [options]
+   * @param {Object} [options.filters]        same as DCDN.fetch
+   * @param {number} [options.depth=1]        relation depth (list/{depth})
+   * @returns {Promise<Object|null>}
+   *
+   * Example:
+   *   const res = await DCDN.getFirstRecord("app_897_settings");
+   *   if (res.data && res.data.child_pricing == 1) { ... }
+   */
   options = options || {};
   return DCDN.request("/v2/api/entity/" + entityKey + "/list/" + (options.depth == null ? 1 : options.depth), {
     filters: options.filters,
@@ -4126,7 +5815,20 @@ DCDN.getFirstRecord = function getFirstRecord(entityKey, options) {
 };
 
 DCDN.updateRecord = function updateRecord(entityKey, id, fields, options) {
-  /* docs + examples: DCDN.help("updateRecord")  or  DCDN.updateRecord in the console */
+  /**
+   * PUT an update to a v2 record the safe way: the record's own `id` (and, for a child
+   * entity, its parent-link field) is put in the BODY too — without it Daftra treats it as an insert.
+   *
+   * @param {string} entityKey
+   * @param {number|string} id                                         record id
+   * @param {Object} fields                                            fields to save
+   * @param {Object} [options]
+   * @param {{field:string, value:(number|string)}} [options.parentLink]  e.g. { field: "reference_id", value: visitId }
+   * @returns {Promise<Object>}                                        the saved record
+   *
+   * Example:
+   *   await DCDN.updateRecord("app_897_extend_823", 12, { status: "Playing" }, { parentLink: { field: "reference_id", value: 5 } });
+   */
   options = options || {};
   var body = Object.assign({}, unwrapEnvelope(fields), { id: id });
   if (options.parentLink) body[options.parentLink.field] = options.parentLink.value;
@@ -4136,12 +5838,37 @@ DCDN.updateRecord = function updateRecord(entityKey, id, fields, options) {
 };
 
 DCDN.subformKey = function subformKey(entityKey, subformField) {
-  /* docs + examples: DCDN.help("subformKey")  or  DCDN.subformKey in the console */
+  /**
+   * The real (double-prefixed) key a SubForm is read/written under.
+   *
+   * @param {string} entityKey         e.g. "app_897_tariff"
+   * @param {string} subformField      e.g. "price_condition"
+   * @returns {string}                 "app_897_tariff_app_897_tariff_price_condition"
+   *
+   * Example:
+   *   record[DCDN.raw.subformKey("app_897_tariff", "price_condition")]
+   */
   return entityKey + "_" + entityKey + "_" + subformField;
 };
 
 DCDN.upsertSubformRows = function upsertSubformRows(entityKey, recordId, subformField, rows, options) {
-  /* docs + examples: DCDN.help("upsertSubformRows")  or  DCDN.upsertSubformRows in the console */
+  /**
+   * Add / update SubForm rows WITHOUT wiping the rows you don't mention.
+   * (A SubForm write replaces the whole array, so this reads the record first and sends
+   * every existing row back, plus the record's other subforms untouched.)
+   *
+   * @param {string} entityKey                    owner entity key
+   * @param {number|string} recordId              owner record id
+   * @param {string} subformField                 subform field name (without prefixes)
+   * @param {Object[]} rows                       rows WITH `id` update that row, rows WITHOUT `id` are added
+   * @param {Object} [options]
+   * @param {"merge"|"replace"} [options.mode="merge"]   "replace" = send exactly `rows` (deletes the others)
+   * @param {{field:string, value:(number|string)}} [options.parentLink]  see DCDN.updateRecord
+   * @returns {Promise<Object>}                   the saved owner record
+   *
+   * Example:
+   *   await DCDN.upsertSubformRows("app_897_visit", 5, "resources_list", [{ resource: "3", calc_price_rate: 50 }]);
+   */
   options = options || {};
   rows = unwrapEnvelope(rows) || [];
   var key = DCDN.subformKey(entityKey, subformField);
@@ -4175,7 +5902,17 @@ DCDN.upsertSubformRows = function upsertSubformRows(entityKey, recordId, subform
 };
 
 DCDN.parseMultiValue = function parseMultiValue(value) {
-  /* docs + examples: DCDN.help("parseMultiValue")  or  DCDN.parseMultiValue in the console */
+  /**
+   * Read a MultipleDropdown value (comma-separated text OR array) as an array of strings.
+   *
+   * @param {string|Array|null|undefined} value
+   * @returns {string[]}
+   *
+   * Examples:
+   *   DCDN.parseMultiValue("1, 2,3")    // ["1", "2", "3"]
+   *   DCDN.parseMultiValue([4, 5])      // ["4", "5"]
+   *   DCDN.parseMultiValue(null)        // []
+   */
   if (Array.isArray(value)) return value.map(String);
   if (value == null || value === "") return [];
   return String(value)
@@ -4189,7 +5926,15 @@ DCDN.parseMultiValue = function parseMultiValue(value) {
 /* =============================== page / time ============================= */
 
 DCDN.getPageContext = function getPageContext() {
-  /* docs + examples: DCDN.help("getPageContext")  or  DCDN.getPageContext in the console */
+  /**
+   * Who and where: site id, subdomain, domain and user, read from what Daftra puts on every page.
+   *
+   * @returns {{siteId:(string|null), subdomain:(string|null), domain:string, isDaftraDomain:boolean,
+   *            userName:string, isOwner:boolean, staffId:(number|null), branchId:(number|null), roleId:(number|null)}}
+   *
+   * Example:
+   *   DCDN.getPageContext().data.siteId     // "4245753"
+   */
   var pageData = window.visitEvent || (window.dataLayer || []).filter(function (entry) {
     return entry && entry.site_id;
   })[0];
@@ -4219,7 +5964,16 @@ DCDN.getPageContext = function getPageContext() {
 };
 
 DCDN.nowInTimeZone = function nowInTimeZone(timeZone, date) {
-  /* docs + examples: DCDN.help("nowInTimeZone")  or  DCDN.nowInTimeZone in the console */
+  /**
+   * Date and time in another time zone (e.g. to stamp records in Riyadh time).
+   *
+   * @param {string} [timeZone="Asia/Riyadh"]   IANA zone, e.g. "Africa/Cairo"
+   * @param {Date|number|string} [date=now]
+   * @returns {{date:string, time:string, dateTime:string}}   "YYYY-MM-DD", "HH:mm", "YYYY-MM-DD HH:mm:ss"
+   *
+   * Example:
+   *   DCDN.nowInTimeZone("Asia/Riyadh").data   // { date: "2026-10-22", time: "14:05", dateTime: "2026-10-22 14:05:09" }
+   */
   var formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: timeZone || "Asia/Riyadh",
     year: "numeric", month: "2-digit", day: "2-digit",
@@ -4242,7 +5996,16 @@ function parseDateParts(value) {
 }
 
 DCDN.ageOnDate = function ageOnDate(dateOfBirth, onDate) {
-  /* docs + examples: DCDN.help("ageOnDate")  or  DCDN.ageOnDate in the console */
+  /**
+   * Whole years between a birth date and another date (age on that day).
+   *
+   * @param {string|Date} dateOfBirth             "YYYY-MM-DD" or Date
+   * @param {string|Date} [onDate=today]          "YYYY-MM-DD" or Date
+   * @returns {number|null}                       null when a date is missing / invalid
+   *
+   * Example:
+   *   DCDN.ageOnDate("2015-06-01", "2026-05-31")   // 10
+   */
   var birth = parseDateParts(dateOfBirth);
   var on = parseDateParts(onDate || new Date());
   if (!birth || !on) return null;
@@ -4254,7 +6017,23 @@ DCDN.ageOnDate = function ageOnDate(dateOfBirth, onDate) {
 var cachedRequests = {};
 
 DCDN.cached = function cached(key, work, options) {
-  /* docs + examples: DCDN.help("cached")  or  DCDN.cached in the console */
+  /**
+   * Run an async check once and reuse the answer: shared between callers on the page
+   * (one request at a time) and, with `ttl`, kept in localStorage between pages.
+   *
+   * @param {string} key                      cache name
+   * @param {function(): (Promise<*>|*)} work  produces the value
+   * @param {Object} [options]
+   * @param {number} [options.ttl=0]          ms to keep the answer in localStorage (0 = this page only)
+   * @param {boolean} [options.force=false]   ignore the cache and run `work` again
+   * @returns {Promise<*>}                    the value
+   *
+   * Example:
+   *   const res = await DCDN.cached("setupDone", async () => {
+   *     const settings = await DCDN.raw.getFirstRecord("app_924_rasd_settings");
+   *     return !!settings && settings.status === "Connected";
+   *   }, { ttl: 10 * 60 * 1000 });
+   */
   options = options || {};
   var storageKey = "dcdn_cache_" + key;
   if (!options.force) {
@@ -4289,7 +6068,18 @@ DCDN.cached = function cached(key, work, options) {
 /* ============================ return redirects ========================== */
 
 DCDN.setReturnUrl = function setReturnUrl(key, url) {
-  /* docs + examples: DCDN.help("setReturnUrl")  or  DCDN.setReturnUrl in the console */
+  /**
+   * Remember where to send the user back after they create a record on another page
+   * (e.g. "Add Vehicle" from a delivery form). Pair with DCDN.handleReturnRedirect on the target page.
+   *
+   * @param {string} key              storage key, e.g. "car_create_return"
+   * @param {string} [url=current]    url to return to
+   * @returns {boolean}               false when localStorage is blocked
+   *
+   * Example:
+   *   DCDN.setReturnUrl("car_create_return");
+   *   location.href = "/v2/owner/entity/app_609_car/create";
+   */
   try {
     localStorage.setItem(key, url || location.href);
     return true;
@@ -4299,7 +6089,20 @@ DCDN.setReturnUrl = function setReturnUrl(key, url) {
 };
 
 DCDN.handleReturnRedirect = function handleReturnRedirect(options) {
-  /* docs + examples: DCDN.help("handleReturnRedirect")  or  DCDN.handleReturnRedirect in the console */
+  /**
+   * On the page reached after saving (usually the new record's show page): if a return url
+   * was saved with DCDN.setReturnUrl, go back to it with the new record id as a URL parameter.
+   *
+   * @param {Object} options
+   * @param {string} options.key                         same key as DCDN.setReturnUrl
+   * @param {RegExp} options.pathPattern                 path pattern with the new id in group 1, e.g. /\/app_609_car\/(\d+)/
+   * @param {string} options.param                       URL parameter for the id, e.g. "car_id"
+   * @param {string|{ar:string,en:string}} [options.text]   loader text (default "Redirecting...")
+   * @returns {boolean}                                  true when it redirects
+   *
+   * Example:
+   *   DCDN.handleReturnRedirect({ key: "car_create_return", pathPattern: /\/app_609_car\/(\d+)/, param: "car_id" });
+   */
   options = options || {};
   var returnUrl = null;
   try {
@@ -4358,7 +6161,48 @@ function buildSentenceRule(sentence, toArabic) {
 }
 
 DCDN.languagePack = function languagePack(options) {
-  /* docs + examples: DCDN.help("languagePack")  or  DCDN.languagePack in the console */
+  /**
+   * Create a page translator from a phrase dictionary (the "Language Pack").
+   *
+   * @param {Object} options
+   * @param {Array<{en:string, ar:string}|string[]>} options.phrases   word / phrase pairs (case-sensitive, longest applied first)
+   * @param {Array<{en:string, ar:string}|{pattern:string, ar:string, length:number}>} [options.sentences]
+   *        whole sentences swapped as one piece; use {name} slots, e.g. { en: "Sent {count} journals", ar: "تم إرسال {count} قيود" }
+   * @param {"auto"|"toArabic"|"toEnglish"} [options.direction="auto"]   auto = to Arabic on RTL pages, to English on LTR pages
+   * @param {boolean} [options.arabicPagesOnly=false]   only translate on RTL pages (English pages untouched)
+   * @param {boolean} [options.wholeWords=false]        only match whole words ("Test" never changes "Testing")
+   * @param {string}  [options.skipSelector]            elements never translated (default: script, style, noscript, textarea, input, select, option, iframe, .dcdn-no-translate)
+   * @param {string[]} [options.attributes]             attributes translated too (default: placeholder, title, aria-label, data-float-label)
+   * @param {boolean} [options.dropdowns=true]          placeholder <option>s + Daftra dynamic-dropdown display inputs
+   * @param {boolean} [options.iframes=true]            same-origin iframes (now and when they load)
+   * @param {boolean} [options.title=true]              browser tab title on full-page runs
+   * @param {boolean} [options.observe=true]            translate content added later (debounced)
+   * @param {boolean} [options.autoStart=true]          run on DOM ready + window load + dynamic-dropdown open
+   * @returns {{
+   *   translate: function((string|Element)=): void,
+   *   translateText: function(string): string,
+   *   translateSentence: function(string): string,
+   *   addPhrases: function(Array): void,
+   *   addSentences: function(Array): void,
+   *   stop: function(): void,
+   *   phrases: Array
+   * }}  the pack controller (in `data`)
+   *
+   * Examples:
+   *   const pack = DCDN.languagePack({
+   *     phrases: [
+   *       { en: "Delivery Orders", ar: "أوامر التوصيل" },
+   *       { en: "Driver", ar: "سائق" },
+   *       ["Vehicles", "المركبات"],
+   *     ],
+   *     sentences: [{ en: "Sent {count} journals", ar: "تم إرسال {count} قيود" }],
+   *     wholeWords: true,
+   *   }).data;
+   *
+   *   pack.translate("#myModal");                 // after adding HTML
+   *   pack.translateSentence("Sent 5 journals");  // "تم إرسال 5 قيود" on Arabic pages
+   *   pack.addPhrases([{ en: "Plate Number", ar: "رقم اللوحة" }]);
+   */
   options = options || {};
   var phrases = [];
   var sentences = [];
@@ -4642,7 +6486,16 @@ DCDN.languagePack = function languagePack(options) {
 };
 
 DCDN.translateLanguagePack = function translateLanguagePack(rootOrSelector) {
-  /* docs + examples: DCDN.help("translateLanguagePack")  or  DCDN.translateLanguagePack in the console */
+  /**
+   * Run EVERY language pack created on the page again (after adding HTML: modals, AJAX…).
+   *
+   * @param {string|Element} [rootOrSelector=document.body]   container to translate
+   * @returns {number}                                         how many packs ran
+   *
+   * Example:
+   *   $("#modal").html(html);
+   *   DCDN.translateLanguagePack("#modal");
+   */
   languagePacks.forEach(function (pack) {
     pack.translate(rootOrSelector);
   });
@@ -4919,7 +6772,21 @@ function createPublicApi() {
 DCDN.onReady(watchSettingsSave);
 
 DCDN.exposeGlobals = function exposeGlobals() {
-  /* docs + examples: DCDN.help("exposeGlobals")  or  DCDN.exposeGlobals in the console */
+  /**
+   * Define the OLD global function names some page codes still call,
+   * only when they are not defined already:
+   *   toggleLoadingSpinner, getSiteInfo, addThousandSeparator,
+   *   exportTableToExcel, swap, showPopup, closePopup,
+   *   showToastifyAlert, isRtlLanguage, formatCurrencyHtml,
+   *   unwrapSingleEntityResponse, fetchWorkflowTypeByName, getWorkflowTypeRecordId
+   * (these old globals return PLAIN values, like the original page codes)
+   *
+   * @returns {void}
+   *
+   * Example:
+   *   DCDN.exposeGlobals();
+   *   toggleLoadingSpinner(true);   // old code keeps working
+   */
   var oldNames = {
     toggleLoadingSpinner: DCDN.toggleLoadingSpinner,
     getSiteInfo: DCDN.getSiteInfo,
@@ -4945,2939 +6812,8 @@ DCDN.exposeGlobals = function exposeGlobals() {
 debugLog("loaded", { version: VERSION, docs: "DCDN.help()" });
 
 
-/* ---- generated: public JSON API (129 functions) ---- */
-definePublic("configure", function configure(newOptions) {
-  /**
-   * Change the global configuration (merges with the current values).
-   *
-   * @param {Object} newOptions                    any key of DCDN.config:
-   * @param {string|null} [newOptions.apiKey]      API key (only outside Daftra)
-   * @param {string} [newOptions.baseUrl]          prepended to relative urls (only outside Daftra)
-   * @param {number} [newOptions.retries=3]        retries for network / 5xx / 429
-   * @param {number} [newOptions.retryDelay=600]   ms before the first retry (doubles each time)
-   * @param {number} [newOptions.perPage=100]      default page size for fetchAll
-   * @param {number} [newOptions.concurrency=4]    parallel requests for fetchAll / bulkPost
-   * @param {"ar"|"en"|null} [newOptions.lang]     force the language
-   * @param {string} [newOptions.siteInfoKey="site_info"]   localStorage key of the site info
-   * @param {boolean} [newOptions.autoResetSiteInfo=true]   clear site info when settings are saved
-   * @param {number} [newOptions.zIndex=1000000]   z-index of loader / popup / toast
-   * @param {string} [newOptions.primaryColor="#1877f2"]    progress bars / primary buttons
-   * @param {boolean} [newOptions.debug=false]     JSON logs of every request
-   * @returns {Object}                             the whole config after the change
-   *
-   * Examples:
-   *   DCDN.configure({ debug: true })               // log every request
-   *   DCDN.configure({ lang: "en" })                // force English UI texts
-   *   DCDN.configure({ retries: 5, perPage: 200 })
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.configure(...)
-   */
-  return callPublic("configure", this, arguments);
-});
+/* ---- generated: public JSON API (0 functions) ---- */
 
-definePublic("help", function help(functionName) {
-  /**
-   * Print documentation in the console as JSON (and return it).
-   *
-   * @param {string} [functionName]   e.g. "fetch", "storage.set" (empty = list every function)
-   * @returns {{functions:Array<{function:string, description:string}>}|{function:string, docs:string[]}}
-   *
-   * Examples:
-   *   DCDN.help()                  // { functions: [{ function, description }, ...] }
-   *   DCDN.help("bulkFetch")       // { function: "DCDN.bulkFetch", docs: [lines...] }
-   *   DCDN.help("storage.set")     // nested functions work too
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.help(...)
-   */
-  return callPublic("help", this, arguments);
-});
-
-definePublic("sleep", function sleep(milliseconds) {
-  /**
-   * Wait for some milliseconds (use with await).
-   *
-   * @param {number} milliseconds
-   * @returns {Promise<void>}
-   *
-   * Example:
-   *   await DCDN.sleep(500);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.sleep(...)
-   */
-  return callPublic("sleep", this, arguments);
-});
-
-definePublic("debounce", function debounce(callback, waitMs) {
-  /**
-   * Return a function that runs `callback` only after calls stop for `waitMs`.
-   * Good for search inputs / resize / input events.
-   *
-   * @param {Function} callback
-   * @param {number} [waitMs=250]
-   * @returns {Function}   the debounced function
-   *
-   * Example:
-   *   $("#search").on("input", DCDN.debounce(function () { search(this.value); }, 300));
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.debounce(...)
-   */
-  return callPublic("debounce", this, arguments);
-});
-
-definePublic("throttle", function throttle(callback, waitMs) {
-  /**
-   * Return a function that runs `callback` at most once every `waitMs`.
-   *
-   * @param {Function} callback
-   * @param {number} [waitMs=250]
-   * @returns {Function}   the throttled function
-   *
-   * Example:
-   *   window.addEventListener("scroll", DCDN.throttle(onScroll, 200));
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.throttle(...)
-   */
-  return callPublic("throttle", this, arguments);
-});
-
-definePublic("chunk", function chunk(array, size) {
-  /**
-   * Split an array into groups of `size`.
-   *
-   * @param {Array} array
-   * @param {number} size          items per group
-   * @returns {Array<Array>}
-   *
-   * Example:
-   *   DCDN.chunk([1, 2, 3, 4, 5], 2)   // [[1, 2], [3, 4], [5]]
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.chunk(...)
-   */
-  return callPublic("chunk", this, arguments);
-});
-
-definePublic("uid", function uid(prefix) {
-  /**
-   * Random unique id string.
-   *
-   * @param {string} [prefix="dcdn"]
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.uid("tab")   // "tab_k3j9x2a"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.uid(...)
-   */
-  return callPublic("uid", this, arguments);
-});
-
-definePublic("escapeHtml", function escapeHtml(text) {
-  /**
-   * Escape text before putting it inside HTML (prevents broken markup / XSS).
-   *
-   * @param {*} text
-   * @returns {string}
-   *
-   * Example:
-   *   $("#box").html("<b>" + DCDN.escapeHtml(client.name) + "</b>");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.escapeHtml(...)
-   */
-  return callPublic("escapeHtml", this, arguments);
-});
-
-definePublic("toEnDigits", function toEnDigits(text) {
-  /**
-   * Convert Arabic-Indic (٠١٢) and Persian (۰۱۲) digits to 0-9.
-   *
-   * @param {*} text
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.toEnDigits("١٢٣٫٥")   // "123.5"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.toEnDigits(...)
-   */
-  return callPublic("toEnDigits", this, arguments);
-});
-
-definePublic("parseNumber", function parseNumber(value) {
-  /**
-   * Read a number from any displayed amount (removes commas, currency, Arabic digits).
-   * Replaces the many  parseFloat(x.replace(/,/g, ""))  /  removeCurr  snippets.
-   *
-   * @param {number|string} value      number or displayed text
-   * @returns {number}                  0 when no number is found
-   *
-   * Examples:
-   *   DCDN.parseNumber("1,250.50 ر.س")    // 1250.5
-   *   DCDN.parseNumber("SR 99")            // 99
-   *   DCDN.parseNumber("١٢٣")              // 123
-   *   DCDN.parseNumber("(50.00)")          // -50
-   *   DCDN.parseNumber("")                 // 0
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.parseNumber(...)
-   */
-  return callPublic("parseNumber", this, arguments);
-});
-
-definePublic("round", function round(number, decimals) {
-  /**
-   * Correct rounding (fixes 1.005 -> 1.01).
-   *
-   * @param {number|string} number
-   * @param {number} [decimals=2]
-   * @returns {number}
-   *
-   * Example:
-   *   DCDN.round(1.005, 2)   // 1.01
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.round(...)
-   */
-  return callPublic("round", this, arguments);
-});
-
-definePublic("formatNumber", function formatNumber(value, decimals, options) {
-  /**
-   * Format a number with thousands separators.
-   *
-   * @param {number|string} value              number or text
-   * @param {number} [decimals]                 fixed decimals (omit = keep as is)
-   * @param {Object} [options]
-   * @param {string} [options.separator=","]    thousands separator
-   * @param {string} [options.decimalPoint="."] decimal mark
-   * @param {string} [options.prefix=""]        text before
-   * @param {string} [options.suffix=""]        text after
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.formatNumber(1250.5)                       // "1,250.5"
-   *   DCDN.formatNumber(1250.5, 2)                    // "1,250.50"
-   *   DCDN.formatNumber(1250.5, 2, { suffix: " ر.س" })  // "1,250.50 ر.س"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.formatNumber(...)
-   */
-  return callPublic("formatNumber", this, arguments);
-});
-
-definePublic("addThousandSeparator", function addThousandSeparator(value) {
-  /**
-   * Old name kept for compatibility. Same as DCDN.formatNumber(value).
-   *
-   * @param {number|string} value
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.addThousandSeparator(1234567.5)   // "1,234,567.5"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.addThousandSeparator(...)
-   */
-  return callPublic("addThousandSeparator", this, arguments);
-});
-
-definePublic("formatDate", function formatDate(date, format) {
-  /**
-   * Format a date. Tokens: YYYY MM DD HH mm ss
-   *
-   * @param {Date|number|string} [date=now]
-   * @param {string} [format="YYYY-MM-DD"]      tokens: YYYY MM DD HH mm ss
-   * @returns {string}                          "" for an invalid date
-   *
-   * Examples:
-   *   DCDN.formatDate(new Date(), "YYYY-MM-DD")         // "2026-10-18"
-   *   DCDN.formatDate("2026-01-05", "DD/MM/YYYY")       // "05/01/2026"
-   *   DCDN.formatDate(Date.now(), "YYYY-MM-DD HH:mm:ss")
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.formatDate(...)
-   */
-  return callPublic("formatDate", this, arguments);
-});
-
-definePublic("today", function today(format) {
-  /**
-   * Today's date as text.
-   *
-   * @param {string} [format="YYYY-MM-DD"]
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.today()                  // "2026-10-18"
-   *   DCDN.today("DD/MM/YYYY")      // "18/10/2026"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.today(...)
-   */
-  return callPublic("today", this, arguments);
-});
-
-definePublic("addDays", function addDays(date, days, format) {
-  /**
-   * Add (or subtract) days. Returns a Date, or text when `format` is given.
-   *
-   * @param {Date|number|string} [date=now]
-   * @param {number} days                       negative = subtract
-   * @param {string} [format]                   give it to get text instead of a Date
-   * @returns {Date|string}
-   *
-   * Examples:
-   *   DCDN.addDays(new Date(), 7)                   // Date object, next week
-   *   DCDN.addDays("2026-10-01", -1, "YYYY-MM-DD")  // "2026-09-30"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.addDays(...)
-   */
-  return callPublic("addDays", this, arguments);
-});
-
-definePublic("getUrlParam", function getUrlParam(name, url) {
-  /**
-   * Read a query-string parameter.
-   *
-   * @param {string} name
-   * @param {string} [url=current page]
-   * @returns {string|null}
-   *
-   * Example (url ...?client_id=5):
-   *   DCDN.getUrlParam("client_id")   // "5"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getUrlParam(...)
-   */
-  return callPublic("getUrlParam", this, arguments);
-});
-
-definePublic("getRecordId", function getRecordId(url) {
-  /**
-   * The record id of the current view / show / edit page
-   * (= last number in the URL path).
-   *
-   * @param {string} [url=current page]
-   * @returns {number|null}
-   *
-   * Examples:
-   *   /owner/invoices/view/123                -> 123
-   *   /v2/owner/entity/le_projects/15/show    -> 15
-   *   DCDN.getRecordId()                      // current page
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getRecordId(...)
-   */
-  return callPublic("getRecordId", this, arguments);
-});
-
-definePublic("getPageInfo", function getPageInfo(url) {
-  /**
-   * Describe the current Daftra page from its URL.
-   *
-   * @param {string} [url=current page]
-   * @returns {{path:string, isV2:boolean, id:(number|null), entity?:string, workflow?:boolean, controller?:string, action:string}}
-   *
-   * Examples:
-   *   /v2/owner/entity/le_x/15/show  -> { isV2: true,  entity: "le_x", action: "show", id: 15 }
-   *   /owner/invoices/view/123       -> { isV2: false, controller: "invoices", action: "view", id: 123 }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getPageInfo(...)
-   */
-  return callPublic("getPageInfo", this, arguments);
-});
-
-definePublic("onReady", function onReady(callback) {
-  /**
-   * Run `callback` when the DOM is ready (runs immediately if already ready).
-   *
-   * @param {Function} callback
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.onReady(function () { DCDN.toast("ready"); });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.onReady(...)
-   */
-  return callPublic("onReady", this, arguments);
-});
-
-definePublic("waitForElement", function waitForElement(selector, options) {
-  /**
-   * Wait until an element exists in the page, then resolve with it.
-   * Uses MutationObserver (no setInterval loops).
-   *
-   * @param {string} selector
-   * @param {Object} [options]
-   * @param {number} [options.timeout=15000]       ms (0 = forever)
-   * @param {Element|Document} [options.root=document]
-   * @returns {Promise<Element>}                   rejects on timeout
-   *
-   * Examples:
-   *   const res = await DCDN.waitForElement("#InvoiceForm");
-   *   res.success      // false on timeout
-   *   res.data         // "<form#InvoiceForm>"  (JSON text)
-   *   res.element      // the real element
-   *
-   *   DCDN.waitForElement(".invoice-actions", { timeout: 5000 }).then(res => { if (res.success) $(res.element).append(btn); });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.waitForElement(...)
-   */
-  return callPublic("waitForElement", this, arguments);
-});
-
-definePublic("waitFor", function waitFor(condition, options) {
-  /**
-   * Check `condition()` every `interval` ms until it returns something truthy.
-   * Replaces the  setInterval(() => { if (...) clearInterval(...) })  pattern.
-   *
-   * @param {function():*} condition               resolves with its first truthy value
-   * @param {Object} [options]
-   * @param {number} [options.interval=100]        ms between checks
-   * @param {number} [options.timeout=15000]       ms (0 = forever)
-   * @returns {Promise<*>}
-   *
-   * Examples:
-   *   await DCDN.waitFor(() => $("body").hasClass("custom_app"));
-   *   const res = await DCDN.waitFor(() => $("#city")[0].selectize);
-   *   res.data   // the selectize instance
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.waitFor(...)
-   */
-  return callPublic("waitFor", this, arguments);
-});
-
-definePublic("onElement", function onElement(selector, callback, options) {
-  /**
-   * Run `callback(element)` once for every element matching `selector`,
-   * now AND for elements added later (e.g. new subform rows).
-   *
-   * @param {string} selector
-   * @param {function(Element):void} callback      runs once per element
-   * @param {Object} [options]
-   * @param {Element} [options.root=document]      where to watch
-   * @returns {{stop:Function}}
-   *
-   * Example:
-   *   DCDN.onElement('[id$="--qty"]', function (input) {
-   *     input.style.background = "#fffbe6";
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.onElement(...)
-   */
-  return callPublic("onElement", this, arguments);
-});
-
-definePublic("loadScript", function loadScript(src, options) {
-  /**
-   * Load an external script once (cached). Returns a Promise.
-   *
-   * @param {string} src
-   * @param {Object} [options]
-   * @param {string} [options.id]                  id of the <script>
-   * @param {function():boolean} [options.test]    return true to skip loading (already on the page)
-   * @returns {Promise<void>}
-   *
-   * Example:
-   *   await DCDN.loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
-   *                         { test: () => window.XLSX });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.loadScript(...)
-   */
-  return callPublic("loadScript", this, arguments);
-});
-
-definePublic("loadStyle", function loadStyle(href) {
-  /**
-   * Load an external stylesheet once.
-   *
-   * @param {string} href
-   * @returns {Promise<void>}
-   *
-   * Example:
-   *   DCDN.loadStyle("https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.loadStyle(...)
-   */
-  return callPublic("loadStyle", this, arguments);
-});
-
-definePublic("injectCSS", function injectCSS(cssText, id) {
-  /**
-   * Add a <style> tag. With an id it is added only once.
-   *
-   * @param {string} cssText
-   * @param {string} [id]          added once per id
-   * @returns {HTMLStyleElement}
-   *
-   * Example:
-   *   DCDN.injectCSS(".invoice-actions .btn { border-radius: 8px }", "my-app-css");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.injectCSS(...)
-   */
-  return callPublic("injectCSS", this, arguments);
-});
-
-definePublic("copyToClipboard", function copyToClipboard(text) {
-  /**
-   * Copy text to the clipboard. Returns a Promise.
-   *
-   * @param {string} text
-   * @returns {Promise<void>}
-   *
-   * Example:
-   *   DCDN.copyToClipboard(invoiceLink).then(() => DCDN.toast("Copied"));
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.copyToClipboard(...)
-   */
-  return callPublic("copyToClipboard", this, arguments);
-});
-
-definePublic("triggerEnter", function triggerEnter(target) {
-  /**
-   * Simulate pressing Enter on an input
-   * (used to trigger Daftra's barcode / serial number lookups).
-   *
-   * @param {string|Element} target   input selector / element
-   * @returns {void}
-   *
-   * Example:
-   *   $(".item-serial input").val("SN-001");
-   *   DCDN.triggerEnter(".item-serial input");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.triggerEnter(...)
-   */
-  return callPublic("triggerEnter", this, arguments);
-});
-
-definePublic("getUser", function getUser() {
-  /**
-   * The logged-in user object Daftra puts on the page (window.USER).
-   *
-   * @returns {{staff_id?:(number|string), branch_id?:(number|string), is_owner?:(number|boolean), role_id?:(number|string)}}  window.USER
-   *
-   * Example:
-   *   DCDN.getUser().data.staff_id     // 0 = owner
-   *   DCDN.getUser().data.branch_id
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getUser(...)
-   */
-  return callPublic("getUser", this, arguments);
-});
-
-definePublic("isOwner", function isOwner() {
-  /**
-   * true when the logged-in user is the account owner.
-   *
-   * @returns {boolean}
-   *
-   * Example:
-   *   if (!DCDN.isOwner().data) $(".delete-btn").hide();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.isOwner(...)
-   */
-  return callPublic("isOwner", this, arguments);
-});
-
-definePublic("getCsrfToken", function getCsrfToken() {
-  /**
-   * CSRF token of the page (sent automatically by DCDN.post / put / del).
-   *
-   * @returns {string}   "" when the page has none
-   *
-   * Example:
-   *   $.ajaxSetup({ headers: { "X-CSRF-Token": DCDN.getCsrfToken() } });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getCsrfToken(...)
-   */
-  return callPublic("getCsrfToken", this, arguments);
-});
-
-definePublic("field", function field(key, root) {
-  /**
-   * Find a v2 form field by its key.
-   * Looks for  [id$="--key"]  then  [name$="[key]"]  then  #key.
-   *
-   * @param {string} key                 field key, e.g. "qty"
-   * @param {Element|Document} [root=document]
-   * @returns {Element|null}
-   *
-   * Examples:
-   *   DCDN.field("discountvalue")            // <input id="data-le_x--discountvalue">
-   *   DCDN.field("qty", rowElement)          // inside one subform row
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.field(...)
-   */
-  return callPublic("field", this, arguments);
-});
-
-definePublic("fields", function fields(key, root) {
-  /**
-   * All fields with this key (e.g. the same field in every subform row).
-   *
-   * @param {string} key
-   * @param {Element|Document} [root=document]
-   * @returns {Element[]}
-   *
-   * Example:
-   *   DCDN.fields("qty").elements.forEach(input => console.log(input.value));
-   *   DCDN.fields("qty").data   // ["<input#data-le_x--qty>", ...]
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.fields(...)
-   */
-  return callPublic("fields", this, arguments);
-});
-
-definePublic("getFieldValue", function getFieldValue(target) {
-  /**
-   * Read a field value. Works with selectize, select2, checkbox and normal inputs.
-   *
-   * @param {string|Element} target     field key, selector or element
-   * @returns {string|string[]|boolean|null}   selectize value / checkbox state / input value
-   *
-   * Examples:
-   *   DCDN.getFieldValue("qty")              // by field key
-   *   DCDN.getFieldValue("#ClientCity")      // by selector
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getFieldValue(...)
-   */
-  return callPublic("getFieldValue", this, arguments);
-});
-
-definePublic("setFieldValue", function setFieldValue(target, value, text) {
-  /**
-   * Set a field value AND fire change, so Daftra recalculates.
-   * Works with selectize, select2, plain selects (adds the option if missing) and inputs.
-   *
-   * @param {string|Element} target     field key, selector or element
-   * @param {*} value
-   * @param {string} [text]             option text when a select needs a new option
-   * @returns {boolean}                 false when the field was not found
-   *
-   * Examples:
-   *   DCDN.setFieldValue("qty", 5);
-   *   DCDN.setFieldValue("#data-le_custom_data_client--city", 9, "Riyadh");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.setFieldValue(...)
-   */
-  return callPublic("setFieldValue", this, arguments);
-});
-
-definePublic("addMenuItem", function addMenuItem(options) {
-  /**
-   * Add a link inside a sidebar sub-menu (was addNewItemInSubMenu).
-   * The new item is a clone of the first item, so it keeps Daftra's style.
-   *
-   * @param {Object} options
-   * @param {string} [options.parent]                 parent menu selector, e.g. ".mn_inventory"
-   * @param {number|string} [options.sidebarId]       data-app-sidebar-list-item id (fallback)
-   * @param {string} options.url                      link
-   * @param {string|{ar:string,en:string}} options.title
-   * @param {number} [options.after=last]             insert after this item index
-   * @returns {Element|null}                          the new <li>
-   *
-   * Example:
-   *   DCDN.addMenuItem({
-   *     parent: ".mn_inventory", sidebarId: 36,
-   *     url: "/v2/owner/entity/le_service_packages/list",
-   *     title: { ar: "إدارة الباقات", en: "Manage Packages" },
-   *     after: 0,
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.addMenuItem(...)
-   */
-  return callPublic("addMenuItem", this, arguments);
-});
-
-definePublic("buildQuery", function buildQuery(params) {
-  /**
-   * Turn a nested object into Daftra's bracket query string.
-   * null values become a key without value (needed for is_null filters).
-   *
-   * @param {Object} params        nested object (null value = key without value)
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.buildQuery({ filter: { client_id: 5 } })
-   *     // "filter[client_id]=5"
-   *   DCDN.buildQuery({ filter: { name: { like: "abc" }, branch_id: { in: [1, 2] } } })
-   *     // "filter[name][like]=abc&filter[branch_id][in][]=1&filter[branch_id][in][]=2"
-   *   DCDN.buildQuery({ filter: { follow_up_status: { is_null: null } } })
-   *     // "filter[follow_up_status][is_null]"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.buildQuery(...)
-   */
-  return callPublic("buildQuery", this, arguments);
-});
-
-definePublic("buildUrl", function buildUrl(url, options) {
-  /**
-   * Build the final request url from url + options.
-   * Used by every request function — you rarely need it directly.
-   *
-   * @param {string} url
-   * @param {Object} [options]
-   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
-   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
-   * @param {Object} [options.params]         extra raw query parameters
-   * @param {number} [options.page]           page number
-   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.buildUrl("/v2/api/entity/invoice/list/1", { filters: { client_id: 5 }, perPage: 50 })
-   *   // "/v2/api/entity/invoice/list/1?filter[client_id]=5&per_page=50"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.buildUrl(...)
-   */
-  return callPublic("buildUrl", this, arguments);
-});
-
-definePublic("request", function request(url, options) {
-  /**
-   * The core request used by fetch / post / put / del. Retries automatically.
-   *
-   * @param {string} url
-   * @param {Object} [options]
-   * @param {"GET"|"POST"|"PUT"|"PATCH"|"DELETE"} [options.method="GET"]
-   * @param {Object|FormData|string} [options.body]
-   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
-   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
-   * @param {Object} [options.params]         extra raw query parameters
-   * @param {number} [options.page]           page number
-   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
-   * @param {Object} [options.headers]          extra headers
-   * @param {number} [options.retries]          override DCDN.config.retries
-   * @param {boolean} [options.raw=false]       true = the browser Response
-   * @param {AbortSignal} [options.signal]
-   * @returns {Promise<Object|Response>}        the raw Daftra JSON (rejects with DaftraError {message, status, data})
-   *
-   * - JSON body is stringified and Content-Type is set for you.
-   * - X-CSRF-Token is added to POST / PUT / PATCH / DELETE.
-   * - Retries network errors, 5xx and 429 (DCDN.config.retries times, delay doubles).
-   * - Throws a DaftraError when HTTP fails OR the response has result: "failed".
-   *
-   * Example:
-   *   DCDN.request("/v2/api/entity/le_x/5", { method: "PATCH", body: { status: 1 } })
-   *     .then(res => console.log(res))
-   *     .catch(err => console.log(err.status, err.data));
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.request(...)
-   */
-  return callPublic("request", this, arguments);
-});
-
-definePublic("fetch", function fetch(url, options) {
-  /**
-   * GET one endpoint and return the RESULT directly (no res.data digging):
-   *   list url    -> array of rows       (rows.meta = { total, pages, page, response })
-   *   record url  -> the record object
-   *   full: true  -> the raw response
-   * Add  all: true  to get EVERY page (same as DCDN.fetchAll).
-   *
-   * @param {string} url
-   * @param {Object} [options]
-   * @param {Object} [options.filters]        -> filter[...]  e.g. { id: { in: [1,2] }, name: { like: "a" } }
-   * @param {Object} [options.sort]           -> sort[...]    e.g. { id: "desc" }
-   * @param {Object} [options.params]         extra raw query parameters
-   * @param {number} [options.page]           page number
-   * @param {number} [options.perPage]        rows per page (per_page for v2, limit for api2)
-   * @param {boolean} [options.all=false]       true = every page (same as fetchAll)
-   * @param {boolean} [options.full=false]      true = the raw Daftra response
-   * @param {string|boolean} [options.unwrap=true]   api2 model name ("Invoice"), true = auto, false = keep
-   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
-   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
-   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
-   * @param {function(*):void} [options.onSuccess]      callback with the plain result
-   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
-   * @param {function():void} [options.onComplete]      always runs at the end
-   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
-   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
-   * @param {Object} [options.headers]          extra headers
-   * @param {number} [options.retries]          override DCDN.config.retries
-   * @param {AbortSignal} [options.signal]
-   * @returns {Promise<Array|Object>}           list -> rows (+ meta {total, pages, page}), record -> object
-   *
-   * Examples:
-   *   // await style -> { success, data, meta }
-   *   const res = await DCDN.fetch("/v2/api/entity/client/list/1", { filters: { category: "VIP" } });
-   *   if (res.success) {
-   *     res.data.length       // rows of page 1
-   *     res.meta.total        // total rows on the server
-   *   } else {
-   *     res.error.message     // res.error.status
-   *   }
-   *
-   *   const all = await DCDN.fetch("/v2/api/entity/client/list/1", { all: true, loader: true });
-   *   all.data                // every row
-   *
-   *   const inv = await DCDN.fetch("/v2/api/entity/invoice/" + DCDN.raw.getRecordId() + "/1");
-   *   inv.data.no
-   *
-   *   const invoices = await DCDN.fetch("/api2/invoices", { unwrap: "Invoice", perPage: 20 });
-   *   invoices.data[0].id     // instead of res.data[0].Invoice.id
-   *
-   *   const site = await DCDN.fetch("/api2/site_info");   // site.data.currency_code (Site auto-unwrapped)
-   *
-   *   // callback style (no await)
-   *   DCDN.fetch("/v2/api/entity/staff/list/1", {
-   *     loader: "جاري التحميل...",
-   *     errorMessage: true,
-   *     onSuccess: function (staff) { console.log(staff); },
-   *   });
-   *
-   *   // on error: { success: false, error, data: [] }
-   *   const res = await DCDN.fetch(url, { silent: true, fallback: [] });
-   *
-   *   // raw Daftra response inside data
-   *   const raw = await DCDN.fetch("/api2/invoices", { full: true });
-   *   raw.data.pagination.total_results
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.fetch(...)
-   */
-  return callPublic("fetch", this, arguments);
-});
-
-definePublic("post", function post(url, body, options) {
-  /**
-   * POST a JSON body and return the RESULT directly
-   * (the created record, or what the server returns).
-   *
-   * @param {string} url
-   * @param {Object|FormData} body
-   * @param {Object} [options]
-   * @param {string} [options.method="POST"]    override the method
-   * @param {boolean} [options.full=false]               true = raw Daftra response
-   * @param {string|boolean} [options.unwrap=true]      api2 model name to unwrap ("Invoice"), true = auto, false = keep
-   * @param {Object} [options.headers]                  extra request headers
-   * @param {number} [options.retries]                  override DCDN.config.retries
-   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
-   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
-   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
-   * @param {function(*):void} [options.onSuccess]      callback with the plain result
-   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
-   * @param {function():void} [options.onComplete]      always runs at the end
-   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
-   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
-   * @returns {Promise<Object>}                 the saved record / server result
-   *
-   * Examples:
-   *   const res = await DCDN.post("/v2/api/entity/le_invoice-items",
-   *     { invoice_id: 15, item_status: "Not Assigned" },
-   *     { loader: true, successMessage: "تم الحفظ", errorMessage: true });
-   *   res.success   // true / false
-   *   res.data.id   // created record id
-   *
-   *   // update fields of a v2 record
-   *   await DCDN.post("/v2/api/entity/invoice/15/fields", { follow_up_status: 3 });
-   *
-   *   // callback style
-   *   DCDN.post(url, body, {
-   *     onSuccess: function (record) { location.reload(); },
-   *     onError:   function (err) { DCDN.toast(err.message, "error"); },
-   *   });
-   *
-   *   // api2 create invoice -> unwrap the Invoice object
-   *   const res = await DCDN.post("/api2/invoices", { Invoice: {...}, InvoiceItem: [...] }, { unwrap: "Invoice" });
-   *   res.data.id
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.post(...)
-   */
-  return callPublic("post", this, arguments);
-});
-
-definePublic("put", function put(url, body, options) {
-  /**
-   * PUT a JSON body (full update). Returns the result. Same options as DCDN.post.
-   *
-   * @param {string} url
-   * @param {Object} body
-   * @param {Object} [options]                  same as DCDN.post
-   * @returns {Promise<Object>}
-   *
-   * Example:
-   *   await DCDN.put("/v2/api/entity/app_367_package/3", { name: "Gold" }, { successMessage: "تم التعديل" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.put(...)
-   */
-  return callPublic("put", this, arguments);
-});
-
-definePublic("patch", function patch(url, body, options) {
-  /**
-   * PATCH a JSON body (partial update). Returns the result. Same options as DCDN.post.
-   *
-   * @param {string} url
-   * @param {Object} body
-   * @param {Object} [options]                  same as DCDN.post
-   * @returns {Promise<Object>}
-   *
-   * Example:
-   *   await DCDN.patch("/v2/api/entity/le_x/3", { status: 1 });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.patch(...)
-   */
-  return callPublic("patch", this, arguments);
-});
-
-definePublic("del", function del(url, options) {
-  /**
-   * DELETE a record. Returns the result. Same options as DCDN.post.
-   *
-   * @param {string} url
-   * @param {Object} [options]                  same as DCDN.post
-   * @returns {Promise<Object>}
-   *
-   * Example:
-   *   if ((await DCDN.confirm("Delete?", { danger: true })).data) {
-   *     await DCDN.del("/v2/api/entity/le_x/3", { successMessage: "تم الحذف", errorMessage: true });
-   *   }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.del(...)
-   */
-  return callPublic("del", this, arguments);
-});
-
-definePublic("bulkFetch", function bulkFetch(url, options) {
-  /**
-   * Fetch MANY things in one call and return the RESULTS directly. Three ways:
-   *
-   * @param {string|string[]} url                list url, url template with {id}, or a list of urls
-   * @param {Object} [options]
-   * @param {Object} [options.filters]          same as DCDN.fetch
-   * @param {Object} [options.sort]
-   * @param {Object} [options.params]
-   * @param {number} [options.perPage=100]
-   * @param {Array<number|string>} [options.ids]   ids for the {id} template
-   * @param {number} [options.maxPages]         stop after N pages
-   * @param {number} [options.concurrency=4]    parallel requests
-   * @param {string|boolean} [options.unwrap=true]   api2 model name, true = auto, false = keep
-   * @param {boolean|string|{ar:string,en:string}} [options.progress]   progress bar (true or a title)
-   * @param {function(number, number):void} [options.onProgress]        (done, total)
-   * @param {boolean} [options.stopOnError=false]   ids / urls modes: stop at the first failure
-   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
-   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
-   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
-   * @param {function(*):void} [options.onSuccess]      callback with the plain result
-   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
-   * @param {function():void} [options.onComplete]      always runs at the end
-   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
-   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
-   * @returns {Promise<Array>}                  rows (+ meta {total, pages, page, fetchedPages}) / one result per url
-   *
-   * 1) ALL pages of a list (pages are requested in parallel, then merged):
-   *      const res = await DCDN.fetchAll("/v2/api/entity/product/list/1", {
-   *        filters: { "category.name": "extras" },
-   *        perPage: 100,
-   *        progress: true,              // shows a progress bar
-   *      });
-   *      res.data.length                // every row of every page
-   *      res.meta.total                 // total reported by the server
-   *
-   *    api2 rows are wrapped by model name -> `unwrap`:
-   *      const res = await DCDN.fetchAll("/api2/invoices", { unwrap: "Invoice" });
-   *      // res.data = [{ id, no, ... }]  instead of [{ Invoice: {...}, InvoiceItem: [...] }]
-   *
-   * 2) Many records by id (url template with {id}) -> array of records:
-   *      const res = await DCDN.fetchAll("/v2/api/entity/invoice/{id}/1", { ids: [10, 11, 12] });
-   *      res.data   // [record, record, record]
-   *
-   * 3) A list of urls -> array of results (same order):
-   *      const res = await DCDN.fetchAll(["/api2/site_info", "/v2/api/entity/staff/list/1"]);
-   *      const [site, staff] = res.data;
-   *      site.currency_code;   staff.length
-   *
-   * Callback style:
-   *   DCDN.fetchAll("/v2/api/entity/client/list/1", {
-   *     progress: "تحميل العملاء",
-   *     onSuccess: function (clients) { DCDN.toast(clients.length + " clients"); },   // callbacks get the plain data
-   *     errorMessage: true,
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.bulkFetch(...)
-   */
-  return callPublic("bulkFetch", this, arguments);
-});
-
-definePublic("bulkPost", function bulkPost(url, items, options) {
-  /**
-   * Send MANY records (POST by default) with limited parallel requests.
-   * One failure does not stop the others (unless stopOnError: true).
-   *
-   * @param {string|function(*, number):string} url   one url, or (item, index) => url
-   * @param {Array} items                       bodies (or anything + transform)
-   * @param {Object} [options]
-   * @param {"POST"|"PUT"|"PATCH"|"DELETE"} [options.method="POST"]
-   * @param {number} [options.concurrency=3]
-   * @param {number} [options.delay=0]          ms after each request
-   * @param {function(*, number):Object} [options.transform]   (item, index) => body
-   * @param {boolean} [options.stopOnError=false]
-   * @param {boolean|string|{ar:string,en:string}} [options.progress]
-   * @param {function(number, number, Object):void} [options.onProgress]   (done, total, result)
-   * @param {boolean|string|{ar:string,en:string}} [options.loader]   full-screen loader while it runs (true = default text)
-   * @param {string|{ar:string,en:string}} [options.successMessage]       success toast
-   * @param {boolean|string|{ar:string,en:string}} [options.errorMessage] true = toast the error, or your own text
-   * @param {function(*):void} [options.onSuccess]      callback with the plain result
-   * @param {function(Error):void} [options.onError]    callback with the error (the call then reports success:false + fallback)
-   * @param {function():void} [options.onComplete]      always runs at the end
-   * @param {boolean} [options.silent=false]            handle errors without throwing (JSON: success:false + fallback)
-   * @param {*} [options.fallback=null]                 data returned on error in silent / onError mode
-   * @returns {Promise<{results:Array<{item:*, ok:boolean, data?:*, error?:Error}>, success:Array, failed:Array}>}
-   *
-   * Examples:
-   *   const res = await DCDN.bulkPost("/v2/api/entity/le_invoice-items", items, { progress: true });
-   *   res.data.success.length   // saved
-   *   res.data.failed.length    // failed
-   *
-   *   // update many invoice items, one url per item
-   *   await DCDN.bulkPost(
-   *     row => "/v2/api/entity/invoice_item/" + row.id + "/fields",
-   *     rows,
-   *     { transform: row => ({ status: 1 }), concurrency: 2, delay: 100 }
-   *   );
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.bulkPost(...)
-   */
-  return callPublic("bulkPost", this, arguments);
-});
-
-definePublic("uploadFile", function uploadFile(entity, fieldKey, file, filename) {
-  /**
-   * Upload a file / image to a v2 entity file field.
-   * Returns the upload response (use its id when saving the record).
-   *
-   * @param {string} entity              e.g. "le_client_m"
-   * @param {string} fieldKey            e.g. "le_client_m.file"
-   * @param {Blob|File} file
-   * @param {string} [filename]
-   * @returns {Promise<Object>}          upload result (use its id when saving)
-   *
-   * Example:
-   *   const input = document.querySelector("#photo");
-   *   const res = await DCDN.uploadFile("le_client_m", "le_client_m.file", input.files[0]);
-   *   res.data.id
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.uploadFile(...)
-   */
-  return callPublic("uploadFile", this, arguments);
-});
-
-definePublic("entity", function entity(entityKey) {
-  /**
-   * Shortcut object for one v2 entity (custom forms, invoices, products...).
-   *
-   * @param {string} entityKey
-   * @returns {{get:function((number|string), number=):Promise<Object>, list:function(Object=):Promise<Array>, all:function(Object=):Promise<Array>,
-   *            create:function(Object):Promise<Object>, update:function((number|string), Object):Promise<Object>,
-   *            updateFields:function((number|string), Object):Promise<Object>, remove:function((number|string)):Promise<Object>}}
-   *
-   * Example:
-   *   const Items = DCDN.entity("le_invoice-items").data;   // methods return { success, data } too
-   *   await Items.get(5);                               // GET    /v2/api/entity/le_invoice-items/5/1
-   *   await Items.list({ filters: { invoice_id: 9 } }); // first page
-   *   await Items.all({ filters: { invoice_id: 9 } });  // ALL pages (bulkFetch)
-   *   await Items.create({ invoice_id: 9 });            // POST   /v2/api/entity/le_invoice-items
-   *   await Items.update(5, { status: 1 });             // PUT    /v2/api/entity/le_invoice-items/5
-   *   await Items.updateFields(5, { status: 1 });       // POST   /v2/api/entity/le_invoice-items/5/fields
-   *   await Items.remove(5);                            // DELETE /v2/api/entity/le_invoice-items/5
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.entity(...)
-   */
-  return callPublic("entity", this, arguments);
-});
-
-definePublic("storage.key", function key(appId, name) {
-  /**
-   * The real localStorage key used for an app value: "app_{appId}_{name}"
-   * (same format already used by old apps, e.g. "app_397_workflow").
-   *
-   * @param {number|string} appId
-   * @param {string} name
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.storage.key(397, "workflow")   // "app_397_workflow"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.key(...)
-   */
-  return callPublic("storage.key", this, arguments);
-});
-
-definePublic("storage.set", function set(appId, name, value, options) {
-  /**
-   * Save a value for one app.
-   * Strings are saved as-is, other values as JSON.
-   *
-   * @param {number|string} appId
-   * @param {string} name
-   * @param {*} value                     anything JSON-able
-   * @param {Object} [options]
-   * @param {number} [options.ttl]        seconds until it expires
-   * @returns {boolean}                   false when localStorage is blocked
-   *
-   * Examples:
-   *   DCDN.storage.set(397, "workflow", "12");                 // key: app_397_workflow
-   *   DCDN.storage.set(397, "settings", { auto: true });
-   *   DCDN.storage.set(397, "cache", rows, { ttl: 600 });      // expires after 10 minutes
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.set(...)
-   */
-  return callPublic("storage.set", this, arguments);
-});
-
-definePublic("storage.get", function get(appId, name, defaultValue) {
-  /**
-   * Read a value saved with DCDN.storage.set (JSON is parsed for you).
-   * Returns defaultValue (or null) when missing or expired.
-   *
-   * @param {number|string} appId
-   * @param {string} name
-   * @param {*} [defaultValue=null]       returned when missing / expired
-   * @returns {*}
-   *
-   * Examples:
-   *   DCDN.storage.get(397, "workflow")              // "12"
-   *   DCDN.storage.get(397, "settings", {})          // { auto: true }  or {}
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.get(...)
-   */
-  return callPublic("storage.get", this, arguments);
-});
-
-definePublic("storage.has", function has(appId, name) {
-  /**
-   * true when a (non expired) value exists.
-   *
-   * @param {number|string} appId
-   * @param {string} name
-   * @returns {boolean}
-   *
-   * Example:
-   *   if (!DCDN.storage.has(82, "settings").data) loadSettings();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.has(...)
-   */
-  return callPublic("storage.has", this, arguments);
-});
-
-definePublic("storage.remove", function remove(appId, name) {
-  /**
-   * Delete one value.
-   *
-   * @param {number|string} appId
-   * @param {string} name
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.storage.remove(397, "workflow");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.remove(...)
-   */
-  return callPublic("storage.remove", this, arguments);
-});
-
-definePublic("storage.clear", function clear(appId) {
-  /**
-   * Delete every value of one app (all keys starting with "app_{appId}_").
-   *
-   * @param {number|string} appId
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.storage.clear(397);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.storage.clear(...)
-   */
-  return callPublic("storage.clear", this, arguments);
-});
-
-definePublic("getSiteInfo", function getSiteInfo(options) {
-  /**
-   * Site info shared by ALL apps on the account.
-   *
-   * @param {Object} [options]
-   * @param {boolean} [options.force=false]   ignore the cache
-   * @returns {Promise<{Site:Object}>}
-   *
-   * How it works:
-   *   1. If localStorage["site_info"] already exists (set by ANY app) -> return it, no request.
-   *   2. Otherwise GET /api2/site_info and save `response.data`
-   *      ONLY if the key is still empty (another app may have saved it meanwhile —
-   *      we never overwrite it).
-   *   Parallel calls share one request.
-   *
-   * Saved shape (same as the old apps):  { Site: { language_code, currency_code, country_code, ... } }
-   *
-   * Examples:
-   *   const res = await DCDN.getSiteInfo();
-   *   res.data.Site.currency_code      // "SAR"
-   *
-   *   DCDN.getSiteInfo().then(res => res.data.Site.language_code);   // 7 = ar, 41 = en
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.getSiteInfo(...)
-   */
-  return callPublic("getSiteInfo", this, arguments);
-});
-
-definePublic("getSite", function getSite(options) {
-  /**
-   * Shortcut for (await DCDN.getSiteInfo()).Site
-   *
-   * @param {Object} [options]
-   * @param {boolean} [options.force=false]
-   * @returns {Promise<{language_code:number, currency_code:string, country_code:string}>}   info.Site
-   *
-   * Example:
-   *   const res = await DCDN.getSite();
-   *   res.data.currency_code   // "SAR"
-   *   res.data.country_code    // "SA"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.getSite(...)
-   */
-  return callPublic("getSite", this, arguments);
-});
-
-definePublic("getSiteInfoSync", function getSiteInfoSync() {
-  /**
-   * Cached site info WITHOUT a request (null if no app cached it yet).
-   *
-   * @returns {{Site:Object}|null}
-   *
-   * Example:
-   *   const res = DCDN.getSiteInfoSync();
-   *   if (res.data) res.data.Site.currency_code;
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getSiteInfoSync(...)
-   */
-  return callPublic("getSiteInfoSync", this, arguments);
-});
-
-definePublic("clearSiteInfo", function clearSiteInfo() {
-  /**
-   * Remove the cached site info (next getSiteInfo() fetches again).
-   * Done automatically when the settings form is saved.
-   *
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.clearSiteInfo();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.clearSiteInfo(...)
-   */
-  return callPublic("clearSiteInfo", this, arguments);
-});
-
-definePublic("getAppSettings", function getAppSettings(entityKey, options) {
-  /**
-   * Read an app's settings record once and cache it in localStorage
-   * (like the old setAppInfo / getAppGeneralSettings).
-   *
-   * @param {string} entityKey               settings entity
-   * @param {Object} [options]
-   * @param {number|string} [options.appId=entityKey]   storage id -> "app_{appId}_settings"
-   * @param {number} [options.id=1]          record id
-   * @param {number} [options.depth=1]
-   * @param {number} [options.ttl]           cache seconds
-   * @param {boolean} [options.force=false]
-   * @returns {Promise<Object>}
-   *
-   * Example:
-   *   const res = await DCDN.getAppSettings("le_pos_general_Settings", { appId: 82, ttl: 3600 });
-   *   if (res.success && res.data.activate_beauty_app == "2") { ... }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.getAppSettings(...)
-   */
-  return callPublic("getAppSettings", this, arguments);
-});
-
-definePublic("detectLang", function detectLang() {
-  /**
-   * Detect the page language. Returns "ar" or "en".
-   *
-   * @returns {"ar"|"en"}
-   *
-   * Checks in this order:
-   *   1. DCDN.config.lang (forced)
-   *   2. <body class="en_app"> / "ar_app"  (set by the old apps)
-   *   3. dir attribute on <html> / <body>
-   *   4. computed CSS direction of <body>
-   *   5. <html lang="...">
-   *   6. cached site_info language_code (7 = ar, 41 = en)
-   *   7. "ar"
-   *
-   * Examples:
-   *   DCDN.detectLang()                               // { success: true, data: "ar" }
-   *   if (DCDN.detectLang().data === "en") { ... }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.detectLang(...)
-   */
-  return callPublic("detectLang", this, arguments);
-});
-
-definePublic("isRTL", function isRTL() {
-  /**
-   * true on Arabic (right-to-left) pages.
-   *
-   * @returns {boolean}
-   *
-   * Example:
-   *   $box.css("text-align", DCDN.isRTL().data ? "right" : "left");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.isRTL(...)
-   */
-  return callPublic("isRTL", this, arguments);
-});
-
-definePublic("isEn", function isEn() {
-  /**
-   * true on English pages.
-   *
-   * @returns {boolean}
-   *
-   * Example:
-   *   const label = DCDN.isEn().data ? "Save" : "حفظ";
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.isEn(...)
-   */
-  return callPublic("isEn", this, arguments);
-});
-
-definePublic("t", function t(arabicText, englishText) {
-  /**
-   * Pick the text for the page language.
-   *
-   * @param {string|{ar:string,en:string}|string[]} arabicText   Arabic text, or one { ar, en } / [ar, en]
-   * @param {string} [englishText]
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.t("حفظ", "Save").data            // "حفظ" on Arabic pages, "Save" on English pages
-   *   DCDN.t({ ar: "حفظ", en: "Save" }).data  // same, object form
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.t(...)
-   */
-  return callPublic("t", this, arguments);
-});
-
-definePublic("translate", function translate(words, options) {
-  /**
-   * Replace words on the page from a list of { ar, en } pairs, and KEEP replacing (observer). Two modes:
-   *   mode "translate" (default): detect the page language and put every matched word in it
-   *       Arabic page  -> "settings" becomes "الاعدادات"   (Arabic words stay)
-   *       English page -> "الإعدادات" becomes "settings"   (English words stay)
-   *       Calling it twice is safe: the second call finds nothing left to change.
-   *   mode "swap": ignore the language, every Arabic word becomes English and every English word Arabic.
-   *       Calling it twice swaps everything back.
-   * Covers text nodes (labels, buttons, menus, table cells, dropdown options), the attributes below,
-   * and button values. A MutationObserver translates anything Daftra or your code adds later
-   * (modals, AJAX lists, subform rows, dropdown panels). Form VALUES typed by users are never changed.
-   * Every text on the page is checked; a text that CONTAINS a word gets that part replaced.
-   * Arabic matching is tolerant: "الاعدادات" also matches "الإعدادات" / "الإعـدادات" / tashkeel, ى = ي, ة = ه,
-   * and any spaces / &nbsp; / new lines between words match.
-   *
-   * @param {Array<{ar:string, en:string}|string[]>|{ar:string, en:string}} words
-   *        [{ ar: "الإعدادات", en: "Settings" }, ...]  ([ar, en] arrays and one single object work too)
-   * @param {Object} [options]
-   * @param {string|Element} [options.root=document.body]   where to translate / watch
-   * @param {boolean} [options.observe=true]                keep translating new / changed content
-   * @param {boolean} [options.ignoreCase=true]             "settings", "Settings" and "SETTINGS" all match
-   * @param {boolean} [options.wholeWords=false]            only whole words ("Test" never changes "Testing")
-   * @param {boolean} [options.exact=false]                 only when a whole text equals the word
-   * @param {string[]} [options.attributes]                 default placeholder, title, aria-label, data-original-title, data-float-label
-   * @param {string} [options.skipSelector]                 never touched (default: script, style, noscript, textarea, code, pre, .dcdn-no-translate)
-   * @param {"translate"|"swap"} [options.mode="translate"]  see above
-   * @param {"ar"|"en"} [options.lang]                      mode "translate" only: force the target language (default page language)
-   * @param {number} [options.debounce=80]                  ms to wait for DOM changes to settle before re-translating
-   * @returns {{mode:string, replacements:number, words:number, lang:string, hint:(string|undefined), translate:function((string|Element)=):number, addWords:function(Array):number, stop:function():void}}
-   *          replacements = how many texts changed in the first pass; translate() runs again; stop() ends the observer
-   *
-   * Examples:
-   *   DCDN.translate([
-   *     { ar: "الإعدادات", en: "Settings" },
-   *     { ar: "العميل", en: "Client" },
-   *     { ar: "حفظ", en: "Save" },
-   *   ]);
-   *
-   *   // one form only, whole words, stop watching later
-   *   const tr = DCDN.translate([{ ar: "الخدمات", en: "Services" }], { root: "#myForm", wholeWords: true }).data;
-   *   tr.addWords([{ ar: "العمولة", en: "Commission" }]);
-   *   tr.stop();
-   *
-   *   // swap both ways whatever the page language (call again to swap back)
-   *   DCDN.translate([{ ar: "الاعدادات", en: "settings" }], { mode: "swap" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.translate(...)
-   */
-  return callPublic("translate", this, arguments);
-});
-
-definePublic("translateText", function translateText(text, words, lang) {
-  /**
-   * Translate ONE string with the same word list format (no DOM).
-   *
-   * @param {string} text
-   * @param {Array<string[]|{ar:string,en:string}>} words
-   * @param {"ar"|"en"} [lang=page language]     target language
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.translateText("سجل الطلبات", [["سجل الطلبات", "Services Log"]])   // "Services Log" on English pages
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.translateText(...)
-   */
-  return callPublic("translateText", this, arguments);
-});
-
-definePublic("applyBodyClasses", function applyBodyClasses() {
-  /**
-   * Add the body classes the old apps use:
-   *   "custom_app ar_app|en_app {country_code} {currency_code}"
-   * Also done automatically with  <script ... data-body-classes="true">.
-   *
-   * @returns {Promise<Object>}   info.Site
-   *
-   * Example:
-   *   DCDN.applyBodyClasses().then(res => res.data.currency_code);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.applyBodyClasses(...)
-   */
-  return callPublic("applyBodyClasses", this, arguments);
-});
-
-definePublic("showLoader", function showLoader(text) {
-  /**
-   * Show a full-screen loader (spinner + optional text).
-   * Safe for nested calls: every showLoader() needs one hideLoader().
-   *
-   * @param {string|{ar:string,en:string}} [text]
-   * @returns {HTMLElement}   the loader
-   *
-   * Examples:
-   *   DCDN.showLoader();
-   *   DCDN.showLoader({ ar: "جاري الحفظ...", en: "Saving..." });
-   *   ...
-   *   DCDN.hideLoader();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.showLoader(...)
-   */
-  return callPublic("showLoader", this, arguments);
-});
-
-definePublic("hideLoader", function hideLoader(force) {
-  /**
-   * Hide the loader. It really hides when every showLoader() got its hideLoader().
-   *
-   * @param {boolean} [force=false]   hide now, ignoring nested showLoader calls
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.hideLoader();
-   *   DCDN.hideLoader(true);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.hideLoader(...)
-   */
-  return callPublic("hideLoader", this, arguments);
-});
-
-definePublic("toggleLoadingSpinner", function toggleLoadingSpinner(show, text) {
-  /**
-   * Old name kept for compatibility with existing page codes.
-   *
-   * @param {boolean} show
-   * @param {string|{ar:string,en:string}} [text]
-   * @returns {HTMLElement|void}
-   *
-   * Examples:
-   *   DCDN.toggleLoadingSpinner(true);
-   *   DCDN.toggleLoadingSpinner(false);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.toggleLoadingSpinner(...)
-   */
-  return callPublic("toggleLoadingSpinner", this, arguments);
-});
-
-definePublic("withLoader", function withLoader(work, text) {
-  /**
-   * Show the loader while a promise / async function runs, then hide it
-   * (even when it fails). Returns the work result.
-   *
-   * @param {Promise|Function} work                     a Promise or an (async) function
-   * @param {string|{ar:string,en:string}} [text]
-   * @returns {Promise<*>}                               what the work returned
-   *
-   * Examples:
-   *   const res = await DCDN.withLoader(DCDN.post(url, body), "جاري الحفظ...");
-   *   res.data   // what the work returned (here: the post JSON)
-   *
-   *   await DCDN.withLoader(async () => {
-   *     await step1();
-   *     await step2();
-   *   }, { ar: "جاري المعالجة", en: "Processing" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.withLoader(...)
-   */
-  return callPublic("withLoader", this, arguments);
-});
-
-definePublic("toast", function toast(message, type, options) {
-  /**
-   * Show a small notification that disappears by itself.
-   *
-   * @param {string|{ar:string,en:string}} message
-   * @param {"success"|"error"|"warning"|"info"} [type="success"]
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}} [options.title]
-   * @param {number} [options.timeout]            ms (default 3500, errors 6000, 0 = stay)
-   * @param {"top-right"|"top-left"|"top-center"|"bottom-right"|"bottom-left"|"bottom-center"} [options.position]
-   * @param {boolean} [options.html=false]        message is HTML (trusted content only)
-   * @returns {{el:HTMLElement, close:Function}}
-   *
-   * Examples:
-   *   DCDN.toast("تم الحفظ");
-   *   DCDN.toast({ ar: "تم", en: "Done" }, "info");
-   *   DCDN.toast("حدث خطأ", "error", { title: "خطأ", timeout: 0 });
-   *   DCDN.toast.success("Saved");    DCDN.toast.error("Failed");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.toast(...)
-   */
-  return callPublic("toast", this, arguments);
-});
-
-definePublic("progressBar", function progressBar(options) {
-  /**
-   * Show a progress bar (floating at the bottom, or inside a container).
-   *
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}} [options.title]
-   * @param {number} [options.total=0]            number of steps
-   * @param {string|Element} [options.target]     render inside (default floating)
-   * @param {number|boolean} [options.autoClose=1500]   ms after done() (false = keep)
-   * @returns {{el:HTMLElement, update:function(number, number=):Object, increment:function(number=):Object,
-   *            setText:Function, setTitle:Function, done:function(*=, number=):Object, error:Function, remove:Function}}
-   *
-   * Examples:
-   *   const bar = DCDN.progressBar({ title: "ترحيل البنود", total: items.length }).data;
-   *   for (const item of items) {
-   *     await DCDN.post(url, item);
-   *     bar.increment();
-   *   }
-   *   bar.done("تم");
-   *
-   *   // inside a popup / div
-   *   const bar2 = DCDN.progressBar({ title: "Import", total: 100, target: "#import-box" }).data;
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.progressBar(...)
-   */
-  return callPublic("progressBar", this, arguments);
-});
-
-definePublic("showPopup", function showPopup(content, options) {
-  /**
-   * Open a modal popup with any HTML content.
-   *
-   * @param {string|Element|{ar:string,en:string}} content    HTML, element, jQuery or { ar, en }
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}|boolean} [options.title]   false = no header
-   * @param {number|string} [options.width="560px"]
-   * @param {Array<{text:(string|{ar:string,en:string}), class?:string, onClick?:function(Object, HTMLElement):void}>} [options.buttons]
-   * @param {function(Object):void} [options.onOpen]
-   * @param {function(*, Object):void} [options.onClose]
-   * @param {boolean} [options.closeOnBackdrop=true]
-   * @param {boolean} [options.closeOnEsc=true]
-   * @param {string} [options.id]                 fixed id (same id replaces)
-   * @param {string} [options.className]
-   * @param {"rtl"|"ltr"} [options.dir]
-   * @returns {{id:string, el:HTMLElement, box:HTMLElement, body:HTMLElement, setContent:Function, close:function(*=):void}}
-   *
-   * Examples:
-   *   DCDN.showPopup("<p>مرحبا</p>", { title: "رسالة" });
-   *
-   *   const popup = DCDN.showPopup('<input id="note" class="form-control">', {   // popup.data.close()
-   *     title: { ar: "إضافة ملاحظة", en: "Add note" },
-   *     width: 500,
-   *     buttons: [
-   *       { text: "إلغاء" },
-   *       { text: "حفظ", class: "primary", onClick: function (p) {
-   *           const note = p.body.querySelector("#note").value;
-   *           DCDN.post("/v2/api/entity/le_notes", { note }).then(() => p.close());
-   *       } },
-   *     ],
-   *   });
-   *
-   *   // show JSON
-   *   DCDN.showPopup("<pre>" + DCDN.escapeHtml(JSON.stringify(res, null, 2)) + "</pre>", { title: "Response", width: 800 });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.showPopup(...)
-   */
-  return callPublic("showPopup", this, arguments);
-});
-
-definePublic("closePopup", function closePopup(popupId) {
-  /**
-   * Close the top popup, or the popup with this id.
-   *
-   * @param {string} [popupId]    none = the top popup
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.closePopup();
-   *   DCDN.closePopup("my-popup");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.closePopup(...)
-   */
-  return callPublic("closePopup", this, arguments);
-});
-
-definePublic("confirm", function confirm(message, options) {
-  /**
-   * Yes / no popup. Resolves true (OK) or false (Cancel / closed).
-   *
-   * @param {string|{ar:string,en:string}} message
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}} [options.title]
-   * @param {string|{ar:string,en:string}} [options.okText]
-   * @param {string|{ar:string,en:string}} [options.cancelText]
-   * @param {boolean} [options.danger=false]      red OK button
-   * @param {number} [options.width=420]
-   * @returns {Promise<boolean>}                  true = OK
-   *
-   * Examples:
-   *   const answer = await DCDN.confirm("هل تريد الحذف؟", { danger: true });
-   *   if (answer.data) {      // true = OK, false = Cancel
-   *     await DCDN.del(url);
-   *   }
-   *
-   *   DCDN.confirm({ ar: "متأكد؟", en: "Sure?" }).then(res => { if (res.data) save(); });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.confirm(...)
-   */
-  return callPublic("confirm", this, arguments);
-});
-
-definePublic("alert", function alert(message, options) {
-  /**
-   * Message popup with one OK button. Resolves when closed.
-   * (Nicer replacement for window.alert, does not block the page.)
-   *
-   * @param {string|{ar:string,en:string}} message
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}} [options.title]
-   * @param {string|{ar:string,en:string}} [options.okText]
-   * @param {number} [options.width=420]
-   * @returns {Promise<void>}
-   *
-   * Example:
-   *   await DCDN.alert("تم إنشاء 5 مدفوعات");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.alert(...)
-   */
-  return callPublic("alert", this, arguments);
-});
-
-definePublic("registerTabPage", function registerTabPage(pageName, pageConfig) {
-  /**
-   * Register a page name and create  DCDN.appendtab_<pageName>(options).
-   * The name after "appendtab_" is free — use any page you need.
-   *
-   * @param {string} pageName                       -> DCDN.appendtab_<pageName>
-   * @param {Object} [pageConfig]
-   * @param {"auto"|"classic"|"v2"} [pageConfig.layout="auto"]
-   * @param {RegExp} [pageConfig.match]             url pattern (debug note only)
-   * @param {string} [pageConfig.nav]               custom tabs <ul> selector
-   * @param {string} [pageConfig.content]           custom panes container selector
-   * @returns {Function}                            the new appendtab_ function
-   *
-   * Examples:
-   *   DCDN.registerTabPage("school_contract");
-   *   DCDN.appendtab_school_contract({ id: "marks", title: "الدرجات", content: "..." });
-   *
-   *   DCDN.registerTabPage("my_screen", { nav: "#myTabs", content: "#myTabsContent" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.registerTabPage(...)
-   */
-  return callPublic("registerTabPage", this, arguments);
-});
-
-definePublic("appendTab", function appendTab(pageName, options) {
-  /**
-   * Add a custom tab to the current view / show page.
-   * Usually called through a page alias:  DCDN.appendtab_invoice(options),
-   * DCDN.appendtab_client(options), DCDN.appendtab_entity(options) ...
-   * Works on classic and v2 layouts and on the mobile accordion.
-   *
-   * @param {string} pageName                       registered page name or "auto"
-   * @param {Object} options
-   * @param {string} options.id                     unique id (pane id)
-   * @param {string|{ar:string,en:string}} [options.title]
-   * @param {string|Element|function(HTMLElement, Object):(string|Promise<string>)} [options.content]
-   * @param {string} [options.url]                  page to load into the tab
-   * @param {string} [options.selector=".list-table, table, .panel"]   part of `url` to keep
-   * @param {boolean} [options.lazy=true]           load on first open
-   * @param {boolean} [options.reload=false]        reload on every open
-   * @param {boolean} [options.active=false]        open right away
-   * @param {number} [options.position]             insert index
-   * @param {number|string} [options.badge]
-   * @param {function(HTMLElement, Object):void} [options.onOpen]
-   * @param {number} [options.timeout=15000]        ms to wait for the tabs
-   * @returns {Promise<{id:string, link:HTMLElement, li:HTMLElement, pane:HTMLElement, layout:string,
-   *                    open:Function, setContent:Function, setBadge:Function, reload:Function, remove:Function}>}
-   *
-   * Examples:
-   *   // 1) list page inside the tab
-   *   DCDN.appendtab_invoice({
-   *     id: "services_log",
-   *     title: { ar: "سجل الطلبات", en: "Services Log" },
-   *     url: "/v2/owner/entity/le_invoice-items/list?filter[invoice_id]=" + DCDN.getRecordId(),
-   *   });
-   *
-   *   // 2) your own HTML from the API
-   *   DCDN.appendtab_entity({
-   *     id: "payments",
-   *     title: "المدفوعات",
-   *     content: async function () {
-   *       const res = await DCDN.bulkFetch("/v2/api/entity/le_x/list/1", { filters: { ref: DCDN.raw.getRecordId() } });
-   *       return "<ul>" + res.data.map(r => "<li>" + r.id + "</li>").join("") + "</ul>";
-   *     },
-   *   }).then(res => res.data.setBadge(3));      // res.data = the tab controller
-   *
-   *   // 3) any page name
-   *   DCDN.appendTab("client", { id: "notes", title: "Notes", onOpen: pane => console.log(pane) });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.appendTab(...)
-   */
-  return callPublic("appendTab", this, arguments);
-});
-
-definePublic("addDropdown", function addDropdown(target, settings) {
-  /**
-   * Replace a field with a dropdown whose options YOU choose.
-   * The original field stays in the form (hidden) and receives the chosen value,
-   * so Daftra saves it normally.
-   *
-   * @param {string|Element} target                         field(s) to replace
-   * @param {Object} settings
-   * @param {Array|function():Array|Promise<Array>} [settings.options]   "text", { value, text } or raw objects
-   * @param {Object} [settings.source]                     load options from the API
-   * @param {string} settings.source.url
-   * @param {Object} [settings.source.filters]
-   * @param {Object} [settings.source.sort]
-   * @param {number} [settings.source.perPage]
-   * @param {string} [settings.source.valueKey="id"]
-   * @param {string} [settings.source.textKey="name"]
-   * @param {boolean} [settings.source.all=true]           false = first page only
-   * @param {string|function(Object):*} [settings.valueKey="value"]   key, "dot.path" or function
-   * @param {string|function(Object):*} [settings.textKey="text"]
-   * @param {"value"|"text"} [settings.saveAs="value"]     written into the original field
-   * @param {string|{ar:string,en:string}} [settings.placeholder]
-   * @param {boolean} [settings.hideOriginal=true]
-   * @param {boolean} [settings.searchable=false]          select2 when loaded
-   * @param {string} [settings.className]
-   * @param {boolean} [settings.live=false]                also fields added later
-   * @param {function({value:string, text:string, data:*}, Object):void} [settings.onSelect]
-   * @returns {Promise<Object|Object[]>}                   controller(s): { select, original, options, getSelected(), setValue(v), setOptions(list), destroy() }
-   *
-   * ---------------------------------------------------------------------------
-   * A) Single-line text field
-   *    The chosen value (or text) is written into the hidden input.
-   *
-   *    DCDN.addDropdown('[id$="--single_line_field"]', {
-   *      options: ["الرياض", "جدة", { value: "dmm", text: "الدمام" }],
-   *      saveAs: "text",             // write the text ("value" = default)
-   *    });
-   *
-   * B) Dynamic dropdown  (plain <select>, selectize or select2)
-   *    The chosen option is APPENDED to the original select (if missing) and selected.
-   *
-   *    DCDN.addDropdown("#data-le_custom_data_client--city", {
-   *      source: {
-   *        url: "/v2/api/entity/le_cities/list/1",
-   *        filters: { active: 1 },
-   *        valueKey: "id",
-   *        textKey: "city",
-   *      },
-   *    });
-   *
-   * C) Every subform row, also rows added later
-   *    DCDN.addDropdown('[id$="--item_name"]', { options: loadItems, live: true });
-   * ---------------------------------------------------------------------------
-   *
-   * Example with onSelect (fill other fields from the selected row):
-   *   DCDN.addDropdown('[id$="--product_name"]', {
-   *     source: { url: "/v2/api/entity/product/list/1", textKey: "name" },
-   *     saveAs: "text",
-   *     onSelect: function (option) {
-   *       DCDN.setFieldValue("unit_price", option.data.unit_price);
-   *     },
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.addDropdown(...)
-   */
-  return callPublic("addDropdown", this, arguments);
-});
-
-definePublic("calculatePercent", function calculatePercent(target, settings) {
-  /**
-   * Add a "%" input BEFORE a value input.
-   *   - typing a percent fills the value:   value = base × percent / 100
-   *   - typing a value updates the percent: percent = value / base × 100
-   *   - when the base input changes, the value is recalculated
-   * The target input keeps 70% of its width, the % input takes the rest.
-   *
-   * @param {string|Element} target                        value input(s)
-   * @param {Object} settings
-   * @param {string|Element|number|function(HTMLElement):number} settings.base   what to take the percent of
-   * @param {string} [settings.baseScope]                  find `base` inside target.closest(baseScope)
-   * @param {number} [settings.decimals=2]
-   * @param {number} [settings.ratio=0.7]                  width kept for the target
-   * @param {number} [settings.max=100]
-   * @param {boolean} [settings.sync=true]                 value -> percent too
-   * @param {string|{ar:string,en:string}} [settings.placeholder="%"]
-   * @param {boolean} [settings.live=false]
-   * @param {function({percent:number, value:number, base:number, target:HTMLElement}):void} [settings.onChange]
-   * @returns {Object|Object[]}                            controller(s): { percentInput, target, getPercent(), setPercent(p), recalc(), destroy() }
-   *
-   * Examples:
-   *   // discount value = % of the subtotal shown on the page
-   *   DCDN.calculatePercent('[id$="--discountvalue"]', { base: "#subtotal" });
-   *
-   *   // one base per row, also new rows
-   *   DCDN.calculatePercent(".value-input", { base: ".row-total", baseScope: "tr", live: true });
-   *
-   *   // base from code, 3 decimals
-   *   DCDN.calculatePercent("#amount", {
-   *     base: () => DCDN.parseNumber($("#invoice-total").text()),
-   *     decimals: 3,
-   *     onChange: ({ percent, value }) => console.log(percent + "% =", value),
-   *   });
-   *
-   *   const ctrl = DCDN.calculatePercent("#amount", { base: 1000 }).data;
-   *   ctrl.setPercent(15);   // #amount = 150.00
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.calculatePercent(...)
-   */
-  return callPublic("calculatePercent", this, arguments);
-});
-
-definePublic("table.addSerials", function addSerials(table, options) {
-  /**
-   * Add a serial-number column at the start of a table (was addserials).
-   * Runs only once per table.
-   *
-   * @param {string|Element} [table="#listing_table"]
-   * @param {Object} [options]
-   * @param {string|{ar:string,en:string}} [options.header]
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.table.addSerials();                                    // #listing_table
-   *   DCDN.table.addSerials("#my-table", { header: { ar: "م", en: "#" } });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.table.addSerials(...)
-   */
-  return callPublic("table.addSerials", this, arguments);
-});
-
-definePublic("table.swapColumns", function swapColumns(firstIndex, secondIndex, table) {
-  /**
-   * Swap two columns in every row: content + id + class.
-   * Same as the standard  swap(in1, in2, "listing_table")  used in templates.
-   *
-   * @param {number} firstIndex                 0-based
-   * @param {number} secondIndex
-   * @param {string|Element} table              table id ("listing_table"), selector or element
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.swap(3, 6, "listing_table");
-   *   DCDN.table.swapColumns(0, 1, "#my-table");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.table.swapColumns(...)
-   */
-  return callPublic("table.swapColumns", this, arguments);
-});
-
-definePublic("table.hideColumn", function hideColumn(table, columnIndex) {
-  /**
-   * Hide one column (0-based) in every row.
-   *
-   * @param {string|Element} table
-   * @param {number} columnIndex                0-based
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.table.hideColumn("#listing_table", 4);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.table.hideColumn(...)
-   */
-  return callPublic("table.hideColumn", this, arguments);
-});
-
-definePublic("table.toJSON", function toJSON(table) {
-  /**
-   * Read a table into an array of objects (first row = keys).
-   *
-   * @param {string|Element} table
-   * @returns {Object[]}                        first row = keys
-   *
-   * Example:
-   *   DCDN.table.toJSON("#report")
-   *   // [{ "Name": "Ahmed", "Total": "1,200" }, ...]
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.table.toJSON(...)
-   */
-  return callPublic("table.toJSON", this, arguments);
-});
-
-definePublic("table.exportToExcel", function exportToExcel(table, filename) {
-  /**
-   * Download a table as an .xls file that Excel opens (RTL sheet on Arabic pages).
-   *
-   * @param {string|Element} table
-   * @param {string} [filename="export"]        without extension
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.exportTableToExcel("#report", "sales-report");
-   *   DCDN.table.exportToExcel(document.querySelector(".list-table"));
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.table.exportToExcel(...)
-   */
-  return callPublic("table.exportToExcel", this, arguments);
-});
-
-definePublic("exportCSV", function exportCSV(rows, filename) {
-  /**
-   * Download rows (array of objects) or a table as a CSV file (UTF-8, Excel friendly).
-   *
-   * @param {Object[]|string|Element} rows      rows, or a table
-   * @param {string} [filename="export"]
-   * @returns {void}
-   *
-   * Examples:
-   *   const res = await DCDN.bulkFetch("/v2/api/entity/client/list/1");
-   *   DCDN.exportCSV(res.data, "clients");
-   *
-   *   DCDN.exportCSV("#report", "report");     // from a table
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.exportCSV(...)
-   */
-  return callPublic("exportCSV", this, arguments);
-});
-
-definePublic("downloadBlob", function downloadBlob(blob, filename) {
-  /**
-   * Download any Blob as a file.
-   *
-   * @param {Blob} blob
-   * @param {string} filename
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.downloadBlob(new Blob([JSON.stringify(data)], { type: "application/json" }), "data.json");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.downloadBlob(...)
-   */
-  return callPublic("downloadBlob", this, arguments);
-});
-
-definePublic("formatCells", function formatCells(selector, options) {
-  /**
-   * Re-format the amounts inside elements (was removeCurr).
-   *
-   * @param {string} selector
-   * @param {Object} [options]
-   * @param {number} [options.decimals=2]
-   * @param {string} [options.prefix]
-   * @param {string} [options.suffix]
-   * @param {string} [options.suffixHtml]       HTML after the number (overrides suffix)
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.formatCells(".removeCurr");                                  // "1234.5" -> "1,234.50"
-   *   DCDN.formatCells(".removeCurr", { suffix: " ر.س" });
-   *   DCDN.formatCells(".amount", { suffixHtml: '<span class="sar_symbol">&nbsp;元</span>' });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.formatCells(...)
-   */
-  return callPublic("formatCells", this, arguments);
-});
-
-definePublic("numberToArabicWords", function numberToArabicWords(number) {
-  /**
-   * Whole number -> Arabic words (no currency).
-   *
-   * @param {number|string} number             whole part is used
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.numberToArabicWords(21)        // "واحد وعشرون"
-   *   DCDN.numberToArabicWords(1250)      // "ألف ومائتان وخمسون"
-   *   DCDN.numberToArabicWords(2000000)   // "مليونان"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.numberToArabicWords(...)
-   */
-  return callPublic("numberToArabicWords", this, arguments);
-});
-
-definePublic("numberToEnglishWords", function numberToEnglishWords(number) {
-  /**
-   * Whole number -> English words (no currency).
-   *
-   * @param {number|string} number
-   * @returns {string}
-   *
-   * Example:
-   *   DCDN.numberToEnglishWords(1250)   // "One Thousand Two Hundred Fifty"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.numberToEnglishWords(...)
-   */
-  return callPublic("numberToEnglishWords", this, arguments);
-});
-
-definePublic("numberToWords", function numberToWords(amount, options) {
-  /**
-   * Amount -> words with currency (tafqeet / convertFN).
-   *
-   * @param {number|string} amount
-   * @param {Object} [options]
-   * @param {"ar"|"en"} [options.lang]          default page language
-   * @param {string|Object} [options.currency]  SAR EGP AED KWD BHD OMR QAR JOD IQD USD, or a DCDN.currencies-style object
-   * @param {string|boolean} [options.prefix]   default "فقط " / "Only " (false = none)
-   * @param {string|boolean} [options.suffix]   default " لا غير" / "" (false = none)
-   * @returns {string}
-   *
-   * Examples:
-   *   DCDN.numberToWords(1250.5, { currency: "SAR", lang: "ar" })
-   *   // "فقط ألف ومائتان وخمسون ريالاً وخمسون هللة لا غير"
-   *
-   *   DCDN.numberToWords(1250.5, { currency: "SAR", lang: "en" })
-   *   // "Only One Thousand Two Hundred Fifty Riyals and Fifty Halalas"
-   *
-   *   DCDN.numberToWords(3000, { currency: "EGP", prefix: false, suffix: false })
-   *   // "ثلاثة آلاف جنيه"
-   *
-   *   // in a page: write the total in words under the invoice total
-   *   $("#total-words").text(DCDN.numberToWords($("#invoice-total").text(), { currency: "SAR" }).data);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.numberToWords(...)
-   */
-  return callPublic("numberToWords", this, arguments);
-});
-
-definePublic("nativeLoader", function nativeLoader(show, text) {
-  /**
-   * Daftra's OWN full-page loader (.page-loader + .spinner-border), with optional text.
-   * Calling it again while shown only changes the text.
-   *
-   * @param {boolean} show                      true = show, false = hide (after `hideDelay` ms)
-   * @param {string|{ar:string,en:string}} [text]  text under the spinner
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.nativeLoader(true, { ar: "جارِ التحميل...", en: "Loading..." });
-   *   DCDN.nativeLoader(false);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.nativeLoader(...)
-   */
-  return callPublic("nativeLoader", this, arguments);
-});
-
-definePublic("initPage", function initPage(work, text) {
-  /**
-   * Run a page set-up under Daftra's native loader, so users never see the page
-   * half changed. The loader is hidden on every way out (errors included).
-   *
-   * @param {Function|Promise} work                    set-up function (may be async) or a Promise
-   * @param {string|{ar:string,en:string}} [text]      loader text (default "Initializing page...")
-   * @returns {Promise<*>}                             what `work` returned
-   *
-   * Example:
-   *   DCDN.initPage(async function () {
-   *     DCDN.prependBreadcrumb({ label: "NTMP", url: "/v2/owner/entity/app_924_ntmp_dashboard/list" });
-   *     await loadSomething();
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.initPage(...)
-   */
-  return callPublic("initPage", this, arguments);
-});
-
-definePublic("nativeAlert", function nativeAlert(text, type, options) {
-  /**
-   * Show a message EXACTLY like Daftra does on the current page
-   * (was showToastifyAlert in the Language Packs):
-   *   1. page has Daftra's $.toast plugin (v2 create/edit)  -> $.toast
-   *   2. classic /owner/ page (.flash-wrapper)               -> Daftra's server-style banner
-   *   3. other v2 pages (list, show)                          -> Daftra's v2 ui-flash-message banner
-   * Banners (2, 3) replace the previous one and scroll into view.
-   *
-   * @param {string|{ar:string,en:string}} text        message (HTML allowed)
-   * @param {"success"|"error"|"warning"} [type="success"]
-   * @param {Object}  [options]
-   * @param {"auto"|"toast"|"classic"|"v2"} [options.mode="auto"]  force one of the 3 styles
-   * @param {boolean} [options.scroll=true]             scroll the banner into view
-   * @param {string}  [options.container]               selector to put a v2 banner in (default the page content)
-   * @returns {Element|null}                            the banner element (null for $.toast)
-   *
-   * Examples:
-   *   DCDN.nativeAlert("تم الحفظ");
-   *   DCDN.nativeAlert({ ar: "حدث خطأ", en: "Something went wrong" }, "error");
-   *   DCDN.nativeAlert("Check the settings", "warning", { mode: "v2", scroll: false });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.nativeAlert(...)
-   */
-  return callPublic("nativeAlert", this, arguments);
-});
-
-definePublic("flashToast", function flashToast(text, type, options) {
-  /**
-   * Floating, auto-closing banner that LOOKS like Daftra's flash messages
-   * (the Toastify version of the Language Pack, without the Toastify library).
-   *
-   * @param {string|{ar:string,en:string}} text                     message (HTML allowed)
-   * @param {"success"|"error"|"warning"|"info"} [type="success"]
-   * @param {Object}  [options]
-   * @param {"top"|"bottom"} [options.gravity="top"]  screen edge
-   * @param {number}  [options.timeout]               ms before closing (success 2500, warning 4000, error 5000; 0 = stay)
-   * @returns {{el: Element, close: Function}}
-   *
-   * Examples:
-   *   DCDN.flashToast("تم الحفظ");
-   *   DCDN.flashToast({ ar: "تعذر الحفظ", en: "Could not save" }, "error", { gravity: "bottom" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.flashToast(...)
-   */
-  return callPublic("flashToast", this, arguments);
-});
-
-definePublic("noticeAfterReload", function noticeAfterReload(text, type, options) {
-  /**
-   * Save a message to show on the NEXT page load (e.g. after location.reload()
-   * or a redirect). Show it there with DCDN.showPendingNotice() (called automatically
-   * on every page where the CDN loads).
-   *
-   * @param {string|{ar:string,en:string}} text
-   * @param {"success"|"error"|"warning"} [type="success"]
-   * @param {Object} [options]
-   * @param {"native"|"flash"|"toast"} [options.style="native"]  how to show it (nativeAlert / flashToast / toast)
-   * @param {number} [options.maxAgeMs=60000]     ignore it if the next page loads later than this
-   * @returns {boolean}                            false when sessionStorage is blocked
-   *
-   * Example:
-   *   DCDN.noticeAfterReload({ ar: "تم التحديث", en: "Updated" });
-   *   location.reload();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.noticeAfterReload(...)
-   */
-  return callPublic("noticeAfterReload", this, arguments);
-});
-
-definePublic("showPendingNotice", function showPendingNotice() {
-  /**
-   * Show (once) the message saved by DCDN.noticeAfterReload. Runs automatically on page load.
-   *
-   * @returns {Object|null}  the notice { text, type, style } that was shown, or null
-   *
-   * Example:
-   *   DCDN.showPendingNotice();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.showPendingNotice(...)
-   */
-  return callPublic("showPendingNotice", this, arguments);
-});
-
-definePublic("getFieldColumn", function getFieldColumn(field) {
-  /**
-   * The column (label + input) of a form field: its nearest [class*="col-lg-"] ancestor,
-   * or the .form-group inside it (subform rows), which is what Daftra's red-border CSS targets.
-   *
-   * @param {string|Element} field   field id ("data-le_x--qty"), field key ("qty"), selector or element
-   * @returns {Element|null}
-   *
-   * Example:
-   *   DCDN.getFieldColumn("data-le_x--qty");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getFieldColumn(...)
-   */
-  return callPublic("getFieldColumn", this, arguments);
-});
-
-definePublic("clearFieldError", function clearFieldError(field) {
-  /**
-   * Remove the message + red border DCDN.showFieldError added to one field.
-   *
-   * @param {string|Element} field   field id, field key, selector or element
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.clearFieldError("qty");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.clearFieldError(...)
-   */
-  return callPublic("clearFieldError", this, arguments);
-});
-
-definePublic("clearAllFieldErrors", function clearAllFieldErrors(form) {
-  /**
-   * Remove every message DCDN.showFieldError added inside a form.
-   *
-   * @param {string|Element} [form=document]   form selector / element
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.clearAllFieldErrors("form");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.clearAllFieldErrors(...)
-   */
-  return callPublic("clearAllFieldErrors", this, arguments);
-});
-
-definePublic("showFieldError", function showFieldError(field, message) {
-  /**
-   * Red message under a form field, with Daftra's own classes (.is-invalid + .form-validation > p.error).
-   * The message goes away as soon as the field changes.
-   *
-   * @param {string|Element} field                       field id, field key, selector or element
-   * @param {string|{ar:string,en:string}} message       what to fix
-   * @returns {boolean}                                  false when the field was not found
-   *
-   * Example:
-   *   DCDN.showFieldError("data-le_x--qty", { ar: "أدخل الكمية", en: "Enter the quantity" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.showFieldError(...)
-   */
-  return callPublic("showFieldError", this, arguments);
-});
-
-definePublic("bindSaveValidation", function bindSaveValidation(form, collectErrors, beforeValidate) {
-  /**
-   * Block a form's save while `collectErrors()` returns errors, and show them under the fields.
-   * Runs in the capture phase on submit AND on every submit button, before Daftra's own handlers.
-   *
-   * @param {string|Element} form                                    form selector / element
-   * @param {function(): Array<{field:(string|Element), message:(string|{ar:string,en:string})}>} collectErrors
-   *        return [] when everything is valid  (`fieldId` is accepted as an alias of `field`)
-   * @param {Function} [beforeValidate]                              runs first (e.g. sync hidden values)
-   * @returns {boolean}                                              false when the form was not found / already bound
-   *
-   * Example:
-   *   DCDN.bindSaveValidation("form", function () {
-   *     var errors = [];
-   *     if (!DCDN.raw.getFieldValue("qty")) errors.push({ field: "qty", message: { ar: "أدخل الكمية", en: "Enter the quantity" } });
-   *     return errors;
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.bindSaveValidation(...)
-   */
-  return callPublic("bindSaveValidation", this, arguments);
-});
-
-definePublic("prependBreadcrumb", function prependBreadcrumb(options) {
-  /**
-   * Put a breadcrumb in FRONT of the page's own trail. Works on both Daftra layouts:
-   * list/show pages (<ol id="header-breadcrumb">) and create/edit pages (.header-breadcrumbs).
-   * Safe to call more than once (added once per id).
-   *
-   * @param {Object} options
-   * @param {string|{ar:string,en:string}} options.label   crumb text
-   * @param {string} options.url                            crumb link
-   * @param {string} [options.id="dcdn-crumb"]              marker so it is added only once
-   * @param {string} [options.onlyFor]                      entity key: only on that entity's pages
-   * @returns {Element|null}                                the new crumb
-   *
-   * Example:
-   *   DCDN.prependBreadcrumb({ label: { ar: "إعدادات دورة العمل", en: "Workflow Settings" }, url: "/v2/owner/workflow/settings" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.prependBreadcrumb(...)
-   */
-  return callPublic("prependBreadcrumb", this, arguments);
-});
-
-definePublic("setBreadcrumbs", function setBreadcrumbs(options) {
-  /**
-   * Rewrite the page's breadcrumb trail (both layouts).
-   *
-   * @param {Object} options
-   * @param {{label:(string|{ar:string,en:string}), url:string}} [options.first]   rename / relink the first crumb
-   * @param {boolean} [options.hideMiddle=false]          hide every crumb between the first and the active one
-   * @param {string|{ar:string,en:string}} [options.active]  text of the last (current page) crumb
-   * @param {boolean} [options.onlyActive=false]          remove every crumb except the last one (wizards)
-   * @param {string|{ar:string,en:string}|boolean} [options.title]  browser tab title (true = same as `active`)
-   * @returns {void}
-   *
-   * Examples:
-   *   DCDN.setBreadcrumbs({
-   *     first: { label: { ar: "إعدادات دورات العمل", en: "Workflow Settings" }, url: "/v2/owner/workflow/settings" },
-   *     hideMiddle: true,
-   *     active: { ar: "صلاحيات أوامر التوصيل", en: "Delivery Orders Permissions" },
-   *     title: true,
-   *   });
-   *   DCDN.setBreadcrumbs({ onlyActive: true, active: { ar: "إعداد رصد", en: "Rasd Setup" }, title: true });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.setBreadcrumbs(...)
-   */
-  return callPublic("setBreadcrumbs", this, arguments);
-});
-
-definePublic("stepsHeader", function stepsHeader(steps, currentStep, options) {
-  /**
-   * Numbered steps strip for wizards: a dot per step, a tick on finished steps.
-   *
-   * @param {Array<{title:(string|{ar:string,en:string}), number?:number, url?:string}>} steps
-   * @param {number} currentStep          `number` of the current step (or its 1-based position)
-   * @param {Object} [options]
-   * @param {string|Element} [options.target]   insert into this container (prepend)
-   * @param {boolean} [options.links=false]     make finished steps clickable (needs step.url)
-   * @returns {Element}                         the <ol class="dcdn-steps">
-   *
-   * Example:
-   *   DCDN.stepsHeader([
-   *     { number: 1, title: { ar: "الربط", en: "Connect" } },
-   *     { number: 2, title: { ar: "الحسابات", en: "Accounts" } },
-   *     { number: 4, title: { ar: "الإعدادات", en: "Settings" } },
-   *   ], 2, { target: ".main-area > .container" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.stepsHeader(...)
-   */
-  return callPublic("stepsHeader", this, arguments);
-});
-
-definePublic("addListButton", function addListButton(options) {
-  /**
-   * Add a button to a list page's top bar, in Daftra's style, beside "Add".
-   *
-   * @param {Object} options
-   * @param {string} options.id                               unique id (added once)
-   * @param {string|{ar:string,en:string}} options.label      button text
-   * @param {string} [options.icon="mdi-plus"]                mdi icon class
-   * @param {string} [options.href="#"]                       link (ignored when onClick is given)
-   * @param {function(Event, Element)} [options.onClick]      click handler
-   * @param {string} [options.className="btn-secondary"]      extra classes
-   * @param {string} [options.container=".pages-head-btns"]   bar selector
-   * @returns {Element|null}                                  the button, null when the bar is missing
-   *
-   * Example:
-   *   DCDN.addListButton({
-   *     id: "refresh-accounts", icon: "mdi-refresh",
-   *     label: { ar: "تحديث الحسابات", en: "Refresh Accounts" },
-   *     onClick: function () { DCDN.noticeAfterReload("Done"); location.reload(); },
-   *   });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.addListButton(...)
-   */
-  return callPublic("addListButton", this, arguments);
-});
-
-definePublic("hideEarly", function hideEarly(selector, id) {
-  /**
-   * Hide elements with CSS right away (even before Daftra paints them), so they never flash.
-   * Call reveal() later to show them again.
-   *
-   * @param {string} selector        CSS selector to hide
-   * @param {string} [id]            style id (default derived from the selector)
-   * @returns {{reveal: Function, style: Element}}
-   *
-   * Example:
-   *   var add = DCDN.raw.hideEarly('.pages-head-btns .add-new-btn, a[name="Add-Work-Flow"]');
-   *   if (canAdd) add.reveal();
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.hideEarly(...)
-   */
-  return callPublic("hideEarly", this, arguments);
-});
-
-definePublic("hideElements", function hideElements(selectors, id) {
-  /**
-   * Hide elements permanently with one CSS rule (e.g. action buttons, a form field container).
-   *
-   * @param {string|string[]} selectors   one selector or a list
-   * @param {string} [id]                 style id (added once)
-   * @returns {Element}                   the <style>
-   *
-   * Example:
-   *   DCDN.hideElements([
-   *     '.btn-group[aria-label="item-actions-group"] a[href$="/edit"]',
-   *     '.btn-group[aria-label="item-actions-group"] a[data-delete-prompt]',
-   *   ], "hide-workflow-actions");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.hideElements(...)
-   */
-  return callPublic("hideElements", this, arguments);
-});
-
-definePublic("hideFormField", function hideFormField(fieldKey, entityKey) {
-  /**
-   * Hide a v2 form field (label + input) with CSS.
-   *
-   * @param {string} fieldKey             field key, e.g. "status"
-   * @param {string} [entityKey]          entity key (default: from the current URL)
-   * @returns {Element}                   the <style>
-   *
-   * Example:
-   *   DCDN.hideFormField("status");
-   *   DCDN.hideFormField("status", "le_workflow-type-entity-36");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.hideFormField(...)
-   */
-  return callPublic("hideFormField", this, arguments);
-});
-
-definePublic("replaceAddButton", function replaceAddButton(options) {
-  /**
-   * Point the page's native "Add" button somewhere else and rename it
-   * (works on the old theme .add-new-btn and the v4 theme a[name="Add-Work-Flow"]).
-   *
-   * @param {Object} options
-   * @param {string} [options.href]                                new link
-   * @param {string|{ar:string,en:string}} [options.label]         new text
-   * @param {boolean} [options.reveal=true]                        remove a DCDN.hideEarly on the button
-   * @returns {number}                                             how many buttons were changed
-   *
-   * Example:
-   *   DCDN.replaceAddButton({ href: "/v2/owner/entity/app_609_add_delivery/create", label: { ar: "أضف أوامر توصيل", en: "Add Delivery Orders" } });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.replaceAddButton(...)
-   */
-  return callPublic("replaceAddButton", this, arguments);
-});
-
-definePublic("addSidebarLink", function addSidebarLink(options) {
-  /**
-   * Add (or replace) a link at the end of a sidebar group, in BOTH Daftra sidebar layouts
-   * (classic .mn_xxx .sub-menu and v2 li[data-app-sidebar-list-item]). The link is a copy
-   * of the group's last entry, so it looks like its neighbours. Retries while the sidebar is drawn.
-   *
-   * @param {Object} options
-   * @param {string} options.id                                 unique id (an existing link with this id is replaced)
-   * @param {string|{ar:string,en:string}} options.label        link text
-   * @param {string} options.url                                link
-   * @param {string} [options.classicGroup=".mn_dashboard"]     classic layout group selector
-   * @param {number|string} [options.v2Group=1]                 v2 layout data-app-sidebar-list-item value
-   * @param {number} [options.retryMs=10000]                    keep trying this long while the sidebar loads
-   * @returns {Promise<boolean>}                                true when at least one link was added
-   *
-   * Example:
-   *   DCDN.addSidebarLink({ id: "ntmp", label: { ar: "إعداد NTMP", en: "NTMP Setup" }, url: "/v2/owner/entity/app_924_rasd_settings/create" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.addSidebarLink(...)
-   */
-  return callPublic("addSidebarLink", this, arguments);
-});
-
-definePublic("formatCurrency", function formatCurrency(amount, currencyCode, options) {
-  /**
-   * Amount + currency symbol, placed before/after per currency and page language
-   * (was formatCurrencyHtml). Unknown codes are shown after the amount ("123.00 XYZ").
-   *
-   * @param {number|string} amount                 number or text ("1,250.5")
-   * @param {string} currencyCode                  ISO 4217 code, e.g. "SAR", "EGP", "USD"
-   * @param {Object} [options]
-   * @param {"ar"|"en"} [options.lang]             default page language
-   * @param {number} [options.decimals=2]          fixed decimals
-   * @param {boolean} [options.html=true]          false = plain text (SAR symbol HTML becomes "SAR")
-   * @returns {string}                             e.g. "1,250.50 ج.م" or "$1,250.50"
-   *
-   * Examples:
-   *   DCDN.formatCurrency(1250.5, "EGP")                  // "1,250.50 ج.م" on Arabic pages
-   *   DCDN.formatCurrency(1250.5, "USD")                  // "$1,250.50"
-   *   DCDN.formatCurrency("99", "SAR", { html: false })   // "SAR 99.00"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.formatCurrency(...)
-   */
-  return callPublic("formatCurrency", this, arguments);
-});
-
-definePublic("unwrapEntity", function unwrapEntity(response) {
-  /**
-   * Normalize a single-record v2 response: { payload: { data: {...} } } -> {...}
-   * (any other shape is returned as is). DCDN.fetch already does this for you.
-   *
-   * @param {Object} response    raw response JSON
-   * @returns {Object}           the record
-   *
-   * Example:
-   *   DCDN.unwrapEntity({ payload: { data: { id: 5 } } })   // { id: 5 }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.unwrapEntity(...)
-   */
-  return callPublic("unwrapEntity", this, arguments);
-});
-
-definePublic("getWorkflowType", function getWorkflowType(name, options) {
-  /**
-   * Find a workflow type by its exact name ({ id, entity_key, name, ... }).
-   * Cached per name for the page; failures are not cached.
-   *
-   * @param {string} name                     exact workflow name, e.g. "Customer Deliveries"
-   * @param {Object} [options]
-   * @param {boolean} [options.force=false]   ignore the cache
-   * @returns {Promise<Object>}               the workflow_type record (rejects when not found)
-   *
-   * Example:
-   *   const res = await DCDN.getWorkflowType("Customer Deliveries");
-   *   res.data.entity_key                      // "le_workflow-type-entity-36"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.getWorkflowType(...)
-   */
-  return callPublic("getWorkflowType", this, arguments);
-});
-
-definePublic("getEntityKeyId", function getEntityKeyId(entityKeyOrType) {
-  /**
-   * The record id at the end of an entity key ("le_workflow-type-entity-36" -> "36"),
-   * used by /workflow_type/{id}/show and /permissions URLs.
-   *
-   * @param {string|{entity_key:string}} entityKeyOrType   entity key or a workflow_type record
-   * @returns {string|null}
-   *
-   * Example:
-   *   DCDN.getEntityKeyId("le_workflow-type-entity-36")   // "36"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getEntityKeyId(...)
-   */
-  return callPublic("getEntityKeyId", this, arguments);
-});
-
-definePublic("getFirstRecord", function getFirstRecord(entityKey, options) {
-  /**
-   * The first record of an entity (for single-record "settings" entities), or null when empty.
-   *
-   * @param {string} entityKey                e.g. "app_897_settings"
-   * @param {Object} [options]
-   * @param {Object} [options.filters]        same as DCDN.fetch
-   * @param {number} [options.depth=1]        relation depth (list/{depth})
-   * @returns {Promise<Object|null>}
-   *
-   * Example:
-   *   const res = await DCDN.getFirstRecord("app_897_settings");
-   *   if (res.data && res.data.child_pricing == 1) { ... }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.getFirstRecord(...)
-   */
-  return callPublic("getFirstRecord", this, arguments);
-});
-
-definePublic("updateRecord", function updateRecord(entityKey, id, fields, options) {
-  /**
-   * PUT an update to a v2 record the safe way: the record's own `id` (and, for a child
-   * entity, its parent-link field) is put in the BODY too — without it Daftra treats it as an insert.
-   *
-   * @param {string} entityKey
-   * @param {number|string} id                                         record id
-   * @param {Object} fields                                            fields to save
-   * @param {Object} [options]
-   * @param {{field:string, value:(number|string)}} [options.parentLink]  e.g. { field: "reference_id", value: visitId }
-   * @returns {Promise<Object>}                                        the saved record
-   *
-   * Example:
-   *   await DCDN.updateRecord("app_897_extend_823", 12, { status: "Playing" }, { parentLink: { field: "reference_id", value: 5 } });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.updateRecord(...)
-   */
-  return callPublic("updateRecord", this, arguments);
-});
-
-definePublic("subformKey", function subformKey(entityKey, subformField) {
-  /**
-   * The real (double-prefixed) key a SubForm is read/written under.
-   *
-   * @param {string} entityKey         e.g. "app_897_tariff"
-   * @param {string} subformField      e.g. "price_condition"
-   * @returns {string}                 "app_897_tariff_app_897_tariff_price_condition"
-   *
-   * Example:
-   *   record[DCDN.raw.subformKey("app_897_tariff", "price_condition")]
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.subformKey(...)
-   */
-  return callPublic("subformKey", this, arguments);
-});
-
-definePublic("upsertSubformRows", function upsertSubformRows(entityKey, recordId, subformField, rows, options) {
-  /**
-   * Add / update SubForm rows WITHOUT wiping the rows you don't mention.
-   * (A SubForm write replaces the whole array, so this reads the record first and sends
-   * every existing row back, plus the record's other subforms untouched.)
-   *
-   * @param {string} entityKey                    owner entity key
-   * @param {number|string} recordId              owner record id
-   * @param {string} subformField                 subform field name (without prefixes)
-   * @param {Object[]} rows                       rows WITH `id` update that row, rows WITHOUT `id` are added
-   * @param {Object} [options]
-   * @param {"merge"|"replace"} [options.mode="merge"]   "replace" = send exactly `rows` (deletes the others)
-   * @param {{field:string, value:(number|string)}} [options.parentLink]  see DCDN.updateRecord
-   * @returns {Promise<Object>}                   the saved owner record
-   *
-   * Example:
-   *   await DCDN.upsertSubformRows("app_897_visit", 5, "resources_list", [{ resource: "3", calc_price_rate: 50 }]);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.upsertSubformRows(...)
-   */
-  return callPublic("upsertSubformRows", this, arguments);
-});
-
-definePublic("parseMultiValue", function parseMultiValue(value) {
-  /**
-   * Read a MultipleDropdown value (comma-separated text OR array) as an array of strings.
-   *
-   * @param {string|Array|null|undefined} value
-   * @returns {string[]}
-   *
-   * Examples:
-   *   DCDN.parseMultiValue("1, 2,3")    // ["1", "2", "3"]
-   *   DCDN.parseMultiValue([4, 5])      // ["4", "5"]
-   *   DCDN.parseMultiValue(null)        // []
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.parseMultiValue(...)
-   */
-  return callPublic("parseMultiValue", this, arguments);
-});
-
-definePublic("getPageContext", function getPageContext() {
-  /**
-   * Who and where: site id, subdomain, domain and user, read from what Daftra puts on every page.
-   *
-   * @returns {{siteId:(string|null), subdomain:(string|null), domain:string, isDaftraDomain:boolean,
-   *            userName:string, isOwner:boolean, staffId:(number|null), branchId:(number|null), roleId:(number|null)}}
-   *
-   * Example:
-   *   DCDN.getPageContext().data.siteId     // "4245753"
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.getPageContext(...)
-   */
-  return callPublic("getPageContext", this, arguments);
-});
-
-definePublic("nowInTimeZone", function nowInTimeZone(timeZone, date) {
-  /**
-   * Date and time in another time zone (e.g. to stamp records in Riyadh time).
-   *
-   * @param {string} [timeZone="Asia/Riyadh"]   IANA zone, e.g. "Africa/Cairo"
-   * @param {Date|number|string} [date=now]
-   * @returns {{date:string, time:string, dateTime:string}}   "YYYY-MM-DD", "HH:mm", "YYYY-MM-DD HH:mm:ss"
-   *
-   * Example:
-   *   DCDN.nowInTimeZone("Asia/Riyadh").data   // { date: "2026-10-22", time: "14:05", dateTime: "2026-10-22 14:05:09" }
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.nowInTimeZone(...)
-   */
-  return callPublic("nowInTimeZone", this, arguments);
-});
-
-definePublic("ageOnDate", function ageOnDate(dateOfBirth, onDate) {
-  /**
-   * Whole years between a birth date and another date (age on that day).
-   *
-   * @param {string|Date} dateOfBirth             "YYYY-MM-DD" or Date
-   * @param {string|Date} [onDate=today]          "YYYY-MM-DD" or Date
-   * @returns {number|null}                       null when a date is missing / invalid
-   *
-   * Example:
-   *   DCDN.ageOnDate("2015-06-01", "2026-05-31")   // 10
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.ageOnDate(...)
-   */
-  return callPublic("ageOnDate", this, arguments);
-});
-
-definePublic("cached", function cached(key, work, options) {
-  /**
-   * Run an async check once and reuse the answer: shared between callers on the page
-   * (one request at a time) and, with `ttl`, kept in localStorage between pages.
-   *
-   * @param {string} key                      cache name
-   * @param {function(): (Promise<*>|*)} work  produces the value
-   * @param {Object} [options]
-   * @param {number} [options.ttl=0]          ms to keep the answer in localStorage (0 = this page only)
-   * @param {boolean} [options.force=false]   ignore the cache and run `work` again
-   * @returns {Promise<*>}                    the value
-   *
-   * Example:
-   *   const res = await DCDN.cached("setupDone", async () => {
-   *     const settings = await DCDN.raw.getFirstRecord("app_924_rasd_settings");
-   *     return !!settings && settings.status === "Connected";
-   *   }, { ttl: 10 * 60 * 1000 });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   *                (async: a Promise of that JSON, never rejects)
-   * Plain value without the JSON wrapper:  DCDN.raw.cached(...)
-   */
-  return callPublic("cached", this, arguments);
-});
-
-definePublic("setReturnUrl", function setReturnUrl(key, url) {
-  /**
-   * Remember where to send the user back after they create a record on another page
-   * (e.g. "Add Vehicle" from a delivery form). Pair with DCDN.handleReturnRedirect on the target page.
-   *
-   * @param {string} key              storage key, e.g. "car_create_return"
-   * @param {string} [url=current]    url to return to
-   * @returns {boolean}               false when localStorage is blocked
-   *
-   * Example:
-   *   DCDN.setReturnUrl("car_create_return");
-   *   location.href = "/v2/owner/entity/app_609_car/create";
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.setReturnUrl(...)
-   */
-  return callPublic("setReturnUrl", this, arguments);
-});
-
-definePublic("handleReturnRedirect", function handleReturnRedirect(options) {
-  /**
-   * On the page reached after saving (usually the new record's show page): if a return url
-   * was saved with DCDN.setReturnUrl, go back to it with the new record id as a URL parameter.
-   *
-   * @param {Object} options
-   * @param {string} options.key                         same key as DCDN.setReturnUrl
-   * @param {RegExp} options.pathPattern                 path pattern with the new id in group 1, e.g. /\/app_609_car\/(\d+)/
-   * @param {string} options.param                       URL parameter for the id, e.g. "car_id"
-   * @param {string|{ar:string,en:string}} [options.text]   loader text (default "Redirecting...")
-   * @returns {boolean}                                  true when it redirects
-   *
-   * Example:
-   *   DCDN.handleReturnRedirect({ key: "car_create_return", pathPattern: /\/app_609_car\/(\d+)/, param: "car_id" });
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.handleReturnRedirect(...)
-   */
-  return callPublic("handleReturnRedirect", this, arguments);
-});
-
-definePublic("languagePack", function languagePack(options) {
-  /**
-   * Create a page translator from a phrase dictionary (the "Language Pack").
-   *
-   * @param {Object} options
-   * @param {Array<{en:string, ar:string}|string[]>} options.phrases   word / phrase pairs (case-sensitive, longest applied first)
-   * @param {Array<{en:string, ar:string}|{pattern:string, ar:string, length:number}>} [options.sentences]
-   *        whole sentences swapped as one piece; use {name} slots, e.g. { en: "Sent {count} journals", ar: "تم إرسال {count} قيود" }
-   * @param {"auto"|"toArabic"|"toEnglish"} [options.direction="auto"]   auto = to Arabic on RTL pages, to English on LTR pages
-   * @param {boolean} [options.arabicPagesOnly=false]   only translate on RTL pages (English pages untouched)
-   * @param {boolean} [options.wholeWords=false]        only match whole words ("Test" never changes "Testing")
-   * @param {string}  [options.skipSelector]            elements never translated (default: script, style, noscript, textarea, input, select, option, iframe, .dcdn-no-translate)
-   * @param {string[]} [options.attributes]             attributes translated too (default: placeholder, title, aria-label, data-float-label)
-   * @param {boolean} [options.dropdowns=true]          placeholder <option>s + Daftra dynamic-dropdown display inputs
-   * @param {boolean} [options.iframes=true]            same-origin iframes (now and when they load)
-   * @param {boolean} [options.title=true]              browser tab title on full-page runs
-   * @param {boolean} [options.observe=true]            translate content added later (debounced)
-   * @param {boolean} [options.autoStart=true]          run on DOM ready + window load + dynamic-dropdown open
-   * @returns {{
-   *   translate: function((string|Element)=): void,
-   *   translateText: function(string): string,
-   *   translateSentence: function(string): string,
-   *   addPhrases: function(Array): void,
-   *   addSentences: function(Array): void,
-   *   stop: function(): void,
-   *   phrases: Array
-   * }}  the pack controller (in `data`)
-   *
-   * Examples:
-   *   const pack = DCDN.languagePack({
-   *     phrases: [
-   *       { en: "Delivery Orders", ar: "أوامر التوصيل" },
-   *       { en: "Driver", ar: "سائق" },
-   *       ["Vehicles", "المركبات"],
-   *     ],
-   *     sentences: [{ en: "Sent {count} journals", ar: "تم إرسال {count} قيود" }],
-   *     wholeWords: true,
-   *   }).data;
-   *
-   *   pack.translate("#myModal");                 // after adding HTML
-   *   pack.translateSentence("Sent 5 journals");  // "تم إرسال 5 قيود" on Arabic pages
-   *   pack.addPhrases([{ en: "Plate Number", ar: "رقم اللوحة" }]);
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.languagePack(...)
-   */
-  return callPublic("languagePack", this, arguments);
-});
-
-definePublic("translateLanguagePack", function translateLanguagePack(rootOrSelector) {
-  /**
-   * Run EVERY language pack created on the page again (after adding HTML: modals, AJAX…).
-   *
-   * @param {string|Element} [rootOrSelector=document.body]   container to translate
-   * @returns {number}                                         how many packs ran
-   *
-   * Example:
-   *   $("#modal").html(html);
-   *   DCDN.translateLanguagePack("#modal");
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.translateLanguagePack(...)
-   */
-  return callPublic("translateLanguagePack", this, arguments);
-});
-
-definePublic("exposeGlobals", function exposeGlobals() {
-  /**
-   * Define the OLD global function names some page codes still call,
-   * only when they are not defined already:
-   *   toggleLoadingSpinner, getSiteInfo, addThousandSeparator,
-   *   exportTableToExcel, swap, showPopup, closePopup,
-   *   showToastifyAlert, isRtlLanguage, formatCurrencyHtml,
-   *   unwrapSingleEntityResponse, fetchWorkflowTypeByName, getWorkflowTypeRecordId
-   * (these old globals return PLAIN values, like the original page codes)
-   *
-   * @returns {void}
-   *
-   * Example:
-   *   DCDN.exposeGlobals();
-   *   toggleLoadingSpinner(true);   // old code keeps working
-   *
-   * RETURNS JSON:  { success: true, data: <@returns above> }  or  { success: false, error: { name, message, status, data } }
-   * Plain value without the JSON wrapper:  DCDN.raw.exposeGlobals(...)
-   */
-  return callPublic("exposeGlobals", this, arguments);
-});
 
   return createPublicApi();
 });
